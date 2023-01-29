@@ -6,6 +6,7 @@ import { writable, type Writable } from "svelte/store";
 import * as store from "svelte/store";
 import * as plugins from "./plugins";
 import { fetch, ResponseType } from "@tauri-apps/api/http";
+import { credentials } from "./api/credentials";
 
 export class ChattiesError extends Error {
 	constructor(message: string) {
@@ -74,6 +75,10 @@ export async function logIn(clientId: string, token: string) {
 		throw new ChattiesError("Failed to log in, no user data");
 	const login = json.data[0].login;
 	await invoke("log_in", { login, token, clientId });
+	credentials.set({
+		creds: { credentials: { login, token } },
+		client_id: clientId,
+	});
 }
 
 export async function processRawIrc(rawIrc: string) {
@@ -83,6 +88,7 @@ export async function processRawIrc(rawIrc: string) {
 
 export async function logOut() {
 	await invoke("log_out");
+	credentials.set(null);
 }
 
 export async function sendMessage(channel: string, message: string) {
@@ -136,15 +142,3 @@ await appWindow.listen<PrivMsg>("priv-msg", event => {
 		return colors;
 	});
 });
-
-type Credentials = {
-	creds: {
-		credentials: {
-			login: string;
-			token: string;
-		};
-	};
-	client_id: string | null; // null if not logged in
-};
-
-export const credentials = await invoke<Credentials>("get_credentials");

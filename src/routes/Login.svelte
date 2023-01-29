@@ -9,17 +9,12 @@
 </script>
 
 <script lang="ts">
-	import { logIn, logOut, credentials } from "$lib/api";
-	let opened = false;
-	const open = () => {
-		opened = true;
-		window.open("http://chatties-auth.esthe.live/");
-	};
+	import { logIn, logOut } from "$lib/api";
+	import { credentials } from "$lib/api/credentials";
+	import * as tauri from "@tauri-apps/api/tauri";
 	const login = async () => {
-		opened = false;
-		const str = prompt(
-			"Enter your login token (https://chatties-auth.esthe.live/)"
-		);
+		await tauri.invoke("open_login");
+		const str = prompt("Enter your login token (check your browser)");
 		if (!str) throw new Error("No login token provided");
 		const info = schema.parse(JSON.parse(str));
 		await logIn(info.client_id, info.access_token);
@@ -28,20 +23,20 @@
 </script>
 
 <div>
-	{#if credentials.client_id}
-		Logged in as {credentials.creds.credentials.login}
+	{#if $credentials != null}
+		Logged in as {$credentials.creds.credentials.login}
 	{:else}
 		Not logged in
 	{/if}
 	<div>
-		<button on:click={opened ? login : open}
-			>{#if !credentials.client_id}
+		<button on:click={login}>
+			{#if $credentials == null}
 				Log In
 			{:else}
 				Relog
-			{/if}</button
-		>
-		{#if credentials.client_id}
+			{/if}
+		</button>
+		{#if $credentials != null}
 			<button on:click={logout}>Log Out</button>
 		{/if}
 	</div>

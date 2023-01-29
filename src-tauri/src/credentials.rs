@@ -3,6 +3,7 @@ use std::{
     io::{BufReader, BufWriter},
 };
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tauri::{App, AppHandle};
 use twitch_irc::login::StaticLoginCredentials;
@@ -14,29 +15,37 @@ pub struct Credentials {
 }
 
 impl Credentials {
-    pub fn write(&self, app: &AppHandle) {
-        let app_data_dir = app.path_resolver().app_data_dir().unwrap();
-        create_dir_all(&app_data_dir).expect("failed to create app data dir");
+    pub fn write(&self, app: &AppHandle) -> Result<()> {
+        let app_data_dir = app
+            .path_resolver()
+            .app_data_dir()
+            .expect("Couldn't get app data dir");
+        create_dir_all(&app_data_dir)?;
         let path = app_data_dir.join("credentials.json");
-        let file = File::create(path).unwrap();
+        let file = File::create(path)?;
         let writer = BufWriter::new(file);
-        serde_json::to_writer(writer, &self).unwrap();
+        serde_json::to_writer(writer, &self)?;
+        Ok(())
     }
 
-    pub fn read(app: &App) -> Credentials {
+    pub fn read(app: &App) -> Result<Credentials> {
         let path = app
             .path_resolver()
             .app_data_dir()
-            .unwrap()
+            .expect("Couldn't get app data dir")
             .join("credentials.json");
         if !path.exists() {
-            return Credentials {
-                creds: StaticLoginCredentials::anonymous(),
-                client_id: None,
-            };
+            return Ok(Credentials::anonymous());
         }
-        let file = File::open(path).unwrap();
+        let file = File::open(path)?;
         let reader = BufReader::new(file);
-        serde_json::from_reader(reader).unwrap()
+        Ok(serde_json::from_reader(reader)?)
+    }
+
+    pub fn anonymous() -> Credentials {
+        Credentials {
+            creds: StaticLoginCredentials::anonymous(),
+            client_id: None,
+        }
     }
 }

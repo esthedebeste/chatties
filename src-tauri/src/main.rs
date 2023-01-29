@@ -4,23 +4,26 @@
 )]
 mod credentials;
 
+use anyhow::Result;
 use credentials::Credentials;
 
+use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Manager, Window};
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{IRCMessage, ServerMessage};
-use twitch_irc::TwitchIRCClient;
+use twitch_irc::TwitchIRCClient as GTwitchIRCClient;
 use twitch_irc::{ClientConfig, SecureTCPTransport};
 
+type TwitchIRCClient = GTwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>;
 struct TwitchState {
-    credentials: Credentials,
-    read_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    write_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    read_client: TwitchIRCClient,
+    credentials: Mutex<Credentials>,
+    write_client: Mutex<TwitchIRCClient>,
 }
 
 #[tauri::command]
-fn get_credentials(state: tauri::State<TwitchState>) -> Credentials {
-    state.credentials.clone()
+async fn get_credentials(state: tauri::State<'_, TwitchState>) -> Result<Credentials, ()> {
+    Ok(state.credentials.lock().await.clone())
 }
 
 #[tauri::command]
@@ -28,33 +31,44 @@ fn join_channel(state: tauri::State<TwitchState>, channel: String) -> Result<(),
     state
         .read_client
         .join(channel.clone())
-        .map_err(|e| e.to_string())?;
-    Ok(())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn leave_channel(state: tauri::State<TwitchState>, channel: String) {
-    state.read_client.part(channel.clone());
+    state.read_client.part(channel.clone())
 }
 
 #[tauri::command]
-fn log_in(app: AppHandle, login: String, token: String, client_id: String) {
-    Credentials {
-        creds: StaticLoginCredentials::new(login, Some(token)),
+async fn log_in(
+    app: AppHandle,
+    state: tauri::State<'_, TwitchState>,
+    login: String,
+    token: String,
+    client_id: String,
+) -> Result<(), String> {
+    let login_creds = StaticLoginCredentials::new(login, Some(token));
+    let creds = Credentials {
+        creds: login_creds.clone(),
         client_id: Some(client_id),
-    }
-    .write(&app);
-    app.restart();
+    };
+    creds.write(&app).map_err(|e| e.to_string())?;
+    *state.credentials.lock().await = creds;
+    let (mut inc, write_client) = TwitchIRCClient::new(ClientConfig::new_simple(login_creds));
+    inc.close();
+    *state.write_client.lock().await = write_client;
+    Ok(())
 }
 
 #[tauri::command]
-fn log_out(app: AppHandle) {
-    Credentials {
-        creds: StaticLoginCredentials::anonymous(),
-        client_id: None,
-    }
-    .write(&app);
-    app.restart();
+async fn log_out(app: AppHandle, state: tauri::State<'_, TwitchState>) -> Result<(), String> {
+    let creds = Credentials::anonymous();
+    creds.write(&app).map_err(|e| e.to_string())?;
+    *state.credentials.lock().await = creds;
+    let (mut inc, write_client) = TwitchIRCClient::new(ClientConfig::default());
+    inc.close();
+    *state.write_client.lock().await = write_client;
+    Ok(())
 }
 
 #[tauri::command]
@@ -63,24 +77,18 @@ async fn send_message(
     message: String,
     channel: String,
 ) -> Result<(), String> {
-    let res = state
+    state
         .write_client
+        .lock()
+        .await
         .say(channel, message)
         .await
-        .map_err(|e| e.to_string());
-    if res.is_err() {
-        println!("Error sending message: {:?}", res);
-    }
-    res
+        .map_err(|e| e.to_string())
 }
 
-async fn emit_irc(window: &Window, message: ServerMessage) -> Result<(), String> {
+async fn emit_irc(window: &Window, message: ServerMessage) -> Result<()> {
     match message {
-        ServerMessage::Privmsg(msg) => {
-            window
-                .emit("priv-msg", msg)
-                .map_err(|err| format!("Failed to emit message: {err}"))?;
-        }
+        ServerMessage::Privmsg(msg) => window.emit("priv-msg", msg)?,
         _ => {}
     }
     Ok(())
@@ -90,33 +98,37 @@ async fn emit_irc(window: &Window, message: ServerMessage) -> Result<(), String>
 async fn process_raw_irc(window: Window, raw_irc: &str) -> Result<(), String> {
     let irc_message = IRCMessage::parse(raw_irc).map_err(|err| err.to_string())?;
     let server_message = ServerMessage::try_from(irc_message).map_err(|err| err.to_string())?;
-    emit_irc(&window, server_message).await?;
-    Ok(())
+    emit_irc(&window, server_message)
+        .await
+        .map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+async fn open_login() -> Result<(), String> {
+    open::that("https://chatties-auth.esthe.live/").map_err(|err| err.to_string())
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     tauri::Builder::default()
         .setup(|app| {
-            let credentials = Credentials::read(app);
+            let credentials = Credentials::read(app)?;
             let (mut incoming_messages, read_client) =
-                TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(
-                    ClientConfig::new_simple(credentials.creds.clone()),
-                );
+                TwitchIRCClient::new(ClientConfig::default());
             let (mut incoming_write_messages, write_client) =
-                TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(
-                    ClientConfig::new_simple(credentials.creds.clone()),
-                );
+                TwitchIRCClient::new(ClientConfig::new_simple(credentials.creds.clone()));
             incoming_write_messages.close();
             app.manage(TwitchState {
-                credentials: credentials.clone(),
+                credentials: Mutex::new(credentials),
                 read_client,
-                write_client,
+                write_client: Mutex::new(write_client),
             });
-            let main_window = app.get_window("main").unwrap();
+            let main_window = app.get_window("main").expect("Failed to get main window");
             tauri::async_runtime::spawn(async move {
                 while let Some(message) = incoming_messages.recv().await {
-                    emit_irc(&main_window, message.clone()).await.unwrap();
+                    if let Err(error) = emit_irc(&main_window, message.clone()).await {
+                        eprintln!("Error while emitting IRC message: {}", error);
+                    }
                 }
             });
             Ok(())
@@ -128,8 +140,9 @@ async fn main() {
             join_channel,
             leave_channel,
             process_raw_irc,
-            send_message
+            send_message,
+            open_login
         ])
-        .run(tauri::generate_context!())
-        .expect("D:");
+        .run(tauri::generate_context!())?;
+    Ok(())
 }
