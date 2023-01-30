@@ -1,24 +1,22 @@
 <script lang="ts">
-	import Time from "./Time.svelte";
-	import Badge from "./Badge.svelte";
-	import Emote from "./Emote.svelte";
-	import Username from "./Username.svelte";
-	import { privMsg } from "$lib/plugins";
-	import type { PrivMsg } from "$lib/types/priv-msg";
-	import { extendMessage } from "$lib/utils";
+	import Time from "./Time.svelte"
+	import Badge from "./Badge.svelte"
+	import Emote from "./Emote.svelte"
+	import Username from "./Username.svelte"
+	import type { Message } from "$lib/types/message"
+	import { extendMessage } from "$lib/utils"
 
-	export let msg: PrivMsg;
-	$: privMsg(msg);
-	$: date = new Date(msg.server_timestamp);
-	$: parts = extendMessage(msg.message_text, msg.emotes);
+	export let message: Message
+	$: date = new Date(message.server_timestamp)
+	$: parts = extendMessage(message.message_text, message.emotes)
 </script>
 
 <Time {date} />
-<Username login={msg.sender.login} name={msg.sender.name}>
+<Username login={message.sender.login} name={message.sender.name}>
 	<svelte:fragment slot="prefix">
 		<span>
-			{#each msg.badges as badge}
-				<Badge src={badge.url} name={badge.title} extra={badge.info} />
+			{#each message.badges as badge}
+				<Badge source={badge.url} name={badge.title} extra={badge.info} />
 				{" "}
 			{/each}
 		</span>
@@ -27,10 +25,7 @@
 </Username>
 
 {#each parts as part}{#if typeof part === "string"}{part}{:else}<Emote
-			src={part.url}
+			source={part.url}
 			name={part.code}
 			extra={part.info}
 		/>{/if}{/each}
-
-<style>
-</style>

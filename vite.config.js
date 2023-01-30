@@ -1,8 +1,8 @@
-import { defineConfig } from "vite";
-import { sveltekit } from "@sveltejs/kit/vite";
+import { defineConfig } from "vite"
+import { sveltekit } from "@sveltejs/kit/vite"
 
-const prefix = process.env.TAURI_DEBUG ? "dev/" : ":3 ";
-process.env.VITE_APP_VERSION = prefix + require("./package.json").version;
+const prefix = process.env.TAURI_DEBUG ? "dev/" : ":3 "
+process.env.VITE_APP_VERSION = prefix + require("./package.json").version
 export default defineConfig({
 	plugins: [sveltekit()],
 	clearScreen: false,
@@ -16,4 +16,4 @@ export default defineConfig({
 		minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
 		sourcemap: process.env.TAURI_DEBUG ? "inline" : false,
 	},
-});
+})

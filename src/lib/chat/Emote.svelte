@@ -1,27 +1,27 @@
 <script lang="ts">
-	import { tooltip } from "$lib/EmoteTooltip.svelte";
+	import { tooltip } from "$lib/EmoteTooltip.svelte"
 
-	export let src: string;
-	export let name: string;
-	export let extra: string;
-	export let height: string | undefined = undefined;
-	export let width: string | undefined = undefined;
-	export let verticalAlign: string | undefined = undefined;
-	let img: HTMLImageElement;
+	export let source: string
+	export let name: string
+	export let extra: string
+	export let height: string | undefined = undefined
+	export let width: string | undefined = undefined
+	export let verticalAlign: string | undefined = undefined
+	let img: HTMLImageElement
 	const hover = () => {
-		if (!img) return;
-		const rect = img.getBoundingClientRect();
+		if (!img) return
+		const rect = img.getBoundingClientRect()
 		tooltip.set({
 			text: name + "\n" + extra,
 			x: rect.left + rect.width / 2,
 			y: rect.bottom + rect.height / 2,
-		});
-	};
-	const unhover = () => tooltip.set(null);
+		})
+	}
+	const unhover = () => tooltip.set(undefined)
 </script>
 
 <img
-	{src}
+	src={source}
 	alt={name}
 	style:height
 	style:width

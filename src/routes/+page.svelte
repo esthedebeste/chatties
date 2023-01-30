@@ -1,39 +1,16 @@
 <script lang="ts">
-	import { messageStore, onPrivMsg } from "$lib/api";
-	import Message from "$lib/chat/Message.svelte";
-	import { onMount, setContext } from "svelte";
-	import Channels from "./Channels.svelte";
-	import EmoteTooltip from "$lib/EmoteTooltip.svelte";
-	import JoinChannel from "./JoinChannel.svelte";
-	import SendMessage from "./SendMessage.svelte";
-	import { clone } from "$lib/utils";
-	import { writable } from "svelte/store";
-	import Login from "./Login.svelte";
-	let messageElem: HTMLUListElement;
+	import { setContext } from "svelte"
+	import Channels from "./Channels.svelte"
+	import EmoteTooltip from "$lib/EmoteTooltip.svelte"
+	import JoinChannel from "./JoinChannel.svelte"
+	import SendMessage from "./SendMessage.svelte"
+	import { writable } from "svelte/store"
+	import Login from "./Login.svelte"
+	import Messages from "./Messages.svelte"
 
-	function scrollDown(force = false) {
-		if (!messageElem) return;
-		const atBottom =
-			messageElem.scrollTop + messageElem.clientHeight >=
-			messageElem.scrollHeight - 30; // 30px buffer
-		if (atBottom || force)
-			setTimeout(() => messageElem.scroll(0, messageElem.scrollHeight)); // scroll to bottom again to account for the new message
-	}
-
-	let currentChannel = writable(localStorage.getItem("currentChannel") || "");
-	$: currentChannelLogin = $currentChannel.toLowerCase();
-	$: messages = messageStore(currentChannelLogin);
-	$: {
-		$messages;
-		scrollDown();
-	}
-
-	$: {
-		scrollDown();
-		localStorage.setItem("currentChannel", $currentChannel);
-	}
-	onMount(() => scrollDown(true));
-	setContext("currentChannel", currentChannel);
+	let currentChannel = writable<string>(localStorage.getItem("currentChannel") || "")
+	$: localStorage.setItem("currentChannel", $currentChannel)
+	setContext("currentChannel", currentChannel)
 </script>
 
 <main>
@@ -51,12 +28,7 @@
 	<JoinChannel />
 
 	<Channels />
-
-	<ul bind:this={messageElem}>
-		{#each $messages as msg (msg.message_id)}
-			<li><Message msg={clone(msg)} /></li>
-		{/each}
-	</ul>
+	<Messages />
 	<SendMessage />
 
 	<EmoteTooltip />
@@ -75,15 +47,6 @@
 		justify-content: space-between;
 		padding: 0.5ch;
 		border-bottom: 1px solid #777;
-	}
-	ul {
-		list-style: none;
-		padding: 0;
-		padding-left: 0.5ch;
-		margin: 0;
-		flex: 1;
-		overflow-y: auto; /* scrollable if too large */
-		border-top: 1px solid #777;
 	}
 	h1 {
 		display: inline;

@@ -1,22 +1,25 @@
 <script lang="ts" context="module">
-	import { writable } from "svelte/store";
+	import { writable } from "svelte/store"
 
-	export const tooltip = writable<{
-		text: string;
-		x: number;
-		y: number;
-	} | null>(null);
+	export const tooltip = writable<
+		| {
+				text: string
+				x: number
+				y: number
+		  }
+		| undefined
+	>(undefined)
 </script>
 
 <script lang="ts">
-	$: x = $tooltip?.x;
-	$: y = $tooltip?.y;
-	let div: HTMLDivElement;
+	$: x = $tooltip?.x
+	$: y = $tooltip?.y
+	let div: HTMLDivElement
 	$: if (x && y && div) {
-		const rect = div.getBoundingClientRect();
-		if (y + rect.height > innerHeight) y -= rect.height + 55;
-		if (x + rect.width / 2 > innerWidth) x = innerWidth - rect.width / 2 - 15;
-		if (x - rect.width / 2 < 0) x = rect.width / 2;
+		const rect = div.getBoundingClientRect()
+		if (y + rect.height > innerHeight) y -= rect.height + 55
+		if (x + rect.width / 2 > innerWidth) x = innerWidth - rect.width / 2 - 15
+		if (x - rect.width / 2 < 0) x = rect.width / 2
 	}
 </script>
 

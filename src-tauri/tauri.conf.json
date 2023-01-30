@@ -1,7 +1,7 @@
 {
 	"build": {
-		"beforeDevCommand": "npm run dev",
-		"beforeBuildCommand": "npm run build",
+		"beforeDevCommand": "npx vite dev",
+		"beforeBuildCommand": "npx vite build",
 		"devPath": "http://localhost:1420",
 		"distDir": "../build",
 		"withGlobalTauri": false
@@ -36,12 +36,7 @@
 				"depends": []
 			},
 			"externalBin": [],
-			"icon": [
-				"icons/32x32.png",
-				"icons/128x128.png",
-				"icons/128x128@2x.png",
-				"icons/icon.ico"
-			],
+			"icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
 			"identifier": "live.esthe.chatties",
 			"longDescription": "twitch chat client :3",
 			"macOS": {
@@ -72,7 +67,9 @@
 				"height": 800,
 				"resizable": true,
 				"title": "Chatties",
-				"width": 600
+				"width": 600,
+				"minWidth": 305,
+				"minHeight": 340
 			}
 		]
 	}

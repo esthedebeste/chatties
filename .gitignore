@@ -2,4 +2,3 @@ node_modules
 .vscode
 build
 .svelte-kit
-pnpm-lock.yaml
