@@ -18,8 +18,7 @@ export const joinedChannels = writable<string[]>([])
 
 export async function joinChannel(channel: string) {
 	for (const ch of get(joinedChannels)) if (ch.toLowerCase() === channel.toLowerCase()) return
-	const error = await invoke<string | null>("join_channel", { channel })
-	if (error) throw new ChattiesError(error)
+	await invoke("join_channel", { channel })
 	plugins.join(channel)
 	joinedChannels.update(channels => {
 		channels.push(channel)
@@ -76,8 +75,7 @@ export async function logIn(clientId: string, token: string) {
 }
 
 export async function processRawIrc(rawIrc: string) {
-	const error = await invoke<string | null>("process_raw_irc", { rawIrc })
-	if (error) throw new ChattiesError(error)
+	await invoke("process_raw_irc", { rawIrc })
 }
 
 export async function logOut() {
@@ -86,11 +84,7 @@ export async function logOut() {
 }
 
 export async function sendMessage(channel: string, message: string) {
-	const error = await invoke<string | null>("send_message", {
-		channel,
-		message,
-	})
-	if (error) throw new ChattiesError(error)
+	await invoke("send_message", { channel, message })
 }
 
 export const lastSeenColors = writable(

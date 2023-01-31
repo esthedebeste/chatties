@@ -1,11 +1,10 @@
 import type { Plugin } from "./plugin-api"
 import { fetch, ResponseType } from "@tauri-apps/api/http"
-import { buildRegex } from "./regex-based"
+import { buildRegex, regexEmotes } from "./regex-based"
 
 // todo: badges and maybe paints?
 
 interface Emote {
-	type: "Global" | "Channel"
 	id: string
 	name: string
 	flags: number
@@ -99,10 +98,13 @@ export const plugin: Plugin = {
 			method: "GET",
 			responseType: ResponseType.JSON,
 		})
+		if (!response.ok) {
+			console.error("Failed to get 7tv global emotes", response.data)
+			return
+		}
 		const data = response.data as EmoteSet
 		const emoteNames = [] as string[]
 		for (const emote of data.emotes) {
-			emote.type = "Global"
 			globalEmotes[emote.name] = emote
 			emoteNames.push(emote.name)
 		}
@@ -115,12 +117,14 @@ export const plugin: Plugin = {
 			method: "GET",
 			responseType: ResponseType.JSON,
 		})
-		if (!response.ok) return
+		if (!response.ok) {
+			console.error("Failed to get 7tv emotes for channel", channel, id, "data:", response.data)
+			return
+		}
 		const data = response.data as UserInfo
 		const emoteMap: Record<string, Emote> = {}
 		const emoteNames = [] as string[]
 		for (const emote of data.emote_set.emotes) {
-			emote.type = "Channel"
 			emoteMap[emote.name] = emote
 			emoteNames.push(emote.name)
 		}
@@ -130,26 +134,20 @@ export const plugin: Plugin = {
 		channelEmotes.set(id, emoteMap)
 	},
 	message(message) {
-		const run = (regex: RegExp, emotes: Record<string, Emote>) => {
-			const matches = message.message_text.matchAll(regex)
-			if (!matches) return
-			for (const match of matches) {
-				const emote = emotes[match[0]]
-				const start = match.index as number
-				message.emotes.push({
-					code: emote.name,
-					char_range: {
-						start,
-						end: start + emote.name.length,
-					},
-					info: `7tv ${emote.type} Emote`,
-					url: `https://cdn.7tv.app/emote/${emote.data.id}/3x`,
-				})
-			}
-		}
-		if (globalEmoteRegex) run(globalEmoteRegex, globalEmotes)
+		regexEmotes(
+			message,
+			globalEmoteRegex,
+			code => `https://cdn.7tv.app/emote/${globalEmotes[code].data.id}/3x`,
+			() => "7tv Global Emote"
+		)
 		const emotes = channelEmotes.get(message.channel_id)
 		const regex = emoteRegexes.get(message.channel_id)
-		if (emotes && regex) run(regex, emotes)
+		if (emotes && regex)
+			regexEmotes(
+				message,
+				regex,
+				code => `https://cdn.7tv.app/emote/${emotes[code].data.id}/3x`,
+				() => "7tv Channel Emote"
+			)
 	},
 }

@@ -7,14 +7,13 @@
 	export let height: string | undefined = undefined
 	export let width: string | undefined = undefined
 	export let verticalAlign: string | undefined = undefined
-	let img: HTMLImageElement
+	let emote: HTMLImageElement
 	const hover = () => {
-		if (!img) return
-		const rect = img.getBoundingClientRect()
+		if (!emote) return
 		tooltip.set({
-			text: name + "\n" + extra,
-			x: rect.left + rect.width / 2,
-			y: rect.bottom + rect.height / 2,
+			name,
+			extra,
+			emote,
 		})
 	}
 	const unhover = () => tooltip.set(undefined)
@@ -26,7 +25,7 @@
 	style:height
 	style:width
 	style:vertical-align={verticalAlign}
-	bind:this={img}
+	bind:this={emote}
 	on:pointerover={hover}
 	on:pointerout={unhover}
 />

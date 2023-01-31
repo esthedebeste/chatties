@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 mod credentials;
+mod utils;
 
 use anyhow::Result;
 use credentials::Credentials;
@@ -13,6 +14,7 @@ use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{IRCMessage, ServerMessage};
 use twitch_irc::TwitchIRCClient as GTwitchIRCClient;
 use twitch_irc::{ClientConfig, SecureTCPTransport};
+use utils::get_data_dir;
 
 type TwitchIRCClient = GTwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>;
 struct TwitchState {
@@ -108,6 +110,25 @@ async fn open_login() -> Result<(), String> {
     open::that("https://chatties-auth.esthe.live/").map_err(|err| err.to_string())
 }
 
+#[tauri::command]
+async fn get_plugins(app: AppHandle) -> Result<Vec<String>, String> {
+    let plugins_dir = get_data_dir(&app)
+        .map_err(|err| err.to_string())?
+        .join("plugins");
+    if !plugins_dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut plugins = vec![];
+    for entry in std::fs::read_dir(plugins_dir).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let path = entry.path();
+        if path.is_file() {
+            plugins.push(path.to_str().unwrap().to_string());
+        }
+    }
+    Ok(plugins)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     tauri::Builder::default()
@@ -141,7 +162,8 @@ async fn main() -> Result<()> {
             leave_channel,
             process_raw_irc,
             send_message,
-            open_login
+            open_login,
+            get_plugins
         ])
         .run(tauri::generate_context!())?;
     Ok(())

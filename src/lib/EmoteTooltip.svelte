@@ -3,29 +3,42 @@
 
 	export const tooltip = writable<
 		| {
-				text: string
-				x: number
-				y: number
+				name: string
+				extra: string
+				emote: HTMLElement
 		  }
 		| undefined
 	>(undefined)
 </script>
 
 <script lang="ts">
-	$: x = $tooltip?.x
-	$: y = $tooltip?.y
-	let div: HTMLDivElement
-	$: if (x && y && div) {
-		const rect = div.getBoundingClientRect()
-		if (y + rect.height > innerHeight) y -= rect.height + 55
-		if (x + rect.width / 2 > innerWidth) x = innerWidth - rect.width / 2 - 15
-		if (x - rect.width / 2 < 0) x = rect.width / 2
+	let x: number
+	let top: string
+	let bottom: string
+	let element: HTMLDivElement
+	$: if ($tooltip && element) {
+		const { emote } = $tooltip
+		const emoteRect = emote.getBoundingClientRect()
+		const rect = element.getBoundingClientRect()
+		if (emoteRect.bottom + rect.height > innerHeight) {
+			// above the emote
+			bottom = window.innerHeight - emoteRect.top + 5 + "px"
+			top = ""
+		} else {
+			// below the emote
+			top = emoteRect.bottom + 5 + "px"
+			bottom = ""
+		}
+		if (emoteRect.right + rect.width / 2 > innerWidth) x = innerWidth - rect.width / 2 - 15
+		else if (emoteRect.left - rect.width / 2 < 0) x = rect.width / 2
+		else x = emoteRect.left + emoteRect.width / 2
 	}
 </script>
 
 {#if $tooltip}
-	<div bind:this={div} style:left="{x}px" style:top="{y}px">
-		{$tooltip.text}
+	<div bind:this={element} style:left="{x}px" style:top style:bottom>
+		<b>{$tooltip.name}</b>
+		<small>{$tooltip.extra}</small>
 	</div>
 {/if}
 
@@ -36,12 +49,26 @@
 		transform: translateX(-50%);
 		white-space: pre-wrap;
 		word-wrap: break-word;
-		background-color: #fff;
-		border-radius: 5px;
-		padding: 5px;
-		color: #000;
+		backdrop-filter: blur(10px);
+		background-color: #0002;
+		border-radius: 10px;
+		color: #fff;
 		text-align: center;
 		overflow: hidden;
 		max-width: 22ch;
+		display: flex;
+		flex-direction: column;
+	}
+	b {
+		display: block;
+		font-size: 1.2em;
+		padding: 5px;
+		font-weight: 400;
+	}
+	small {
+		display: block;
+		border-top: 1px solid #444;
+		padding: 5px;
+		font-size: inherit;
 	}
 </style>

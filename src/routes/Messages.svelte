@@ -10,7 +10,7 @@
 		if (!messageElement) return
 		const atBottom =
 			messageElement.scrollTop + messageElement.clientHeight >= messageElement.scrollHeight - 30 // 30px buffer
-		if (atBottom || force) setTimeout(() => messageElement.scroll(0, messageElement.scrollHeight)) // scroll to bottom again to account for the new message
+		if (force || atBottom) setTimeout(() => messageElement.scroll(0, messageElement.scrollHeight)) // scroll to bottom again to account for the new message
 	}
 
 	const currentChannel = getContext<Readable<string>>("currentChannel")

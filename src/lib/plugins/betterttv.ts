@@ -1,6 +1,6 @@
 import type { Plugin } from "./plugin-api"
 import { fetch, ResponseType } from "@tauri-apps/api/http"
-import { buildRegex } from "./regex-based"
+import { buildRegex, regexEmotes } from "./regex-based"
 
 interface Emote {
 	id: string
@@ -63,26 +63,20 @@ export const plugin: Plugin = {
 		channelEmotes.set(id, emoteMap)
 	},
 	message(message) {
-		const run = (regex: RegExp, emotes: Record<string, Emote>) => {
-			const matches = message.message_text.matchAll(regex)
-			if (!matches) return
-			for (const match of matches) {
-				const emote = emotes[match[0]]
-				const start = match.index as number
-				message.emotes.push({
-					code: emote.code,
-					char_range: {
-						start,
-						end: start + emote.code.length,
-					},
-					info: `BTTV ${emote.type} Emote`,
-					url: `https://cdn.betterttv.net/emote/${emote.id}/3x`,
-				})
-			}
-		}
-		if (globalEmoteRegex) run(globalEmoteRegex, globalEmotes)
+		regexEmotes(
+			message,
+			globalEmoteRegex,
+			code => `https://cdn.betterttv.net/emote/${globalEmotes[code].id}/3x`,
+			() => "BTTV Global Emote"
+		)
 		const emotes = channelEmotes.get(message.channel_id)
 		const regex = emoteRegexes.get(message.channel_id)
-		if (emotes && regex) run(regex, emotes)
+		if (emotes && regex)
+			regexEmotes(
+				message,
+				regex,
+				code => `https://cdn.betterttv.net/emote/${emotes[code].id}/3x`,
+				code => `BTTV ${emotes[code].type} Emote`
+			)
 	},
 }

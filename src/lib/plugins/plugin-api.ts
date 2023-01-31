@@ -1,4 +1,6 @@
 import type { Message } from "../types/message"
+import * as zod from "zod"
+import "./regex-based" // Get the regexEmotes function into the global scope
 
 export type Nodes = ChildNode[]
 export type Badges = {
@@ -18,6 +20,18 @@ export interface Plugin {
 	channelId?: (channel: string, id: string) => void | Promise<void>
 	// Called when a channel is left
 	leave?: (channel: string) => void
-	// Add info to a message (badges, emotes). The `msg` object is mutable.
+	// Add info to a message (badges, emotes). The `message` parameter is mutable.
 	message?: (message: Message) => void
 }
+
+export const pluginVerifier = zod
+	.object({
+		id: zod.string(),
+		init: zod.function().optional(),
+		destroy: zod.function().optional(),
+		join: zod.function().optional(),
+		channelId: zod.function().optional(),
+		leave: zod.function().optional(),
+		message: zod.function().args().optional(),
+	})
+	.strict()
