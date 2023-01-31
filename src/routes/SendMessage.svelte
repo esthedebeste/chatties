@@ -1,11 +1,8 @@
 <script lang="ts">
-	import { getContext } from "svelte"
-	import type { Writable } from "svelte/store"
-	import { sendMessage } from "$lib/api"
+	import { currentChannel, sendMessage } from "$lib/api"
 
-	let currentChannel = getContext<Writable<string>>("currentChannel")
 	let message = ""
-	const submit = async () => {
+	async function submit() {
 		sendMessage($currentChannel, message)
 		message = ""
 	}

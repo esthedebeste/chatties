@@ -1,17 +1,16 @@
 <script lang="ts">
-	import Time from "./Time.svelte"
-	import Badge from "./Badge.svelte"
-	import Emote from "./Emote.svelte"
-	import Username from "./Username.svelte"
 	import type { Message } from "$lib/types/message"
 	import { extendMessage } from "$lib/utils"
+	import Badge from "./Badge.svelte"
+	import Emote from "./Emote.svelte"
+	import Time from "./Time.svelte"
+	import Username from "./Username.svelte"
 
 	export let message: Message
-	$: date = new Date(message.server_timestamp)
 	$: parts = extendMessage(message.message_text, message.emotes)
 </script>
 
-<Time {date} />
+<Time date={message.server_timestamp} />
 <Username login={message.sender.login} name={message.sender.name}>
 	<svelte:fragment slot="prefix">
 		<span>

@@ -1,5 +1,5 @@
-import type { Plugin } from "./plugin-api"
 import { fetch } from "@tauri-apps/api/http"
+import type { Plugin } from "./plugin-api"
 
 type BadgeInfo = {
 	image_url_1x: string
@@ -29,11 +29,11 @@ export const plugin: Plugin = {
 		badgeSets = data.badge_sets
 	},
 	async channelId(channel, id) {
-		if (customBadges.has(id)) return
 		const response = await fetch(`https://badges.twitch.tv/v1/badges/channels/${id}/display`)
 		if (!response.ok) throw new Error("Failed to fetch channel badges")
 		const data = response.data as { badge_sets: BadgeSets }
 		customBadges.set(id, data.badge_sets)
+		console.log("Loaded custom badges for channel", channel, id, data.badge_sets)
 	},
 	message(message) {
 		for (const emote of message.emotes) {

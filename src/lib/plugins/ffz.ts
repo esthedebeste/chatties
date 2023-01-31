@@ -1,5 +1,5 @@
-import type { Plugin } from "./plugin-api"
 import { fetch, ResponseType } from "@tauri-apps/api/http"
+import type { Plugin } from "./plugin-api"
 import { buildRegex, regexEmotes } from "./regex-based"
 
 // todo: badges (https://api.frankerfacez.com/v1/badges/ids)
@@ -79,7 +79,6 @@ export const plugin: Plugin = {
 		console.log("Built regex", globalEmoteRegex, "for global", globalEmotes)
 	},
 	async channelId(channel, id) {
-		if (channelEmotes.has(id)) return
 		const response = await fetch(`https://api.frankerfacez.com/v1/room/id/${id}`, {
 			method: "GET",
 			responseType: ResponseType.JSON,
@@ -102,21 +101,16 @@ export const plugin: Plugin = {
 		channelEmotes.set(id, emoteMap)
 	},
 	message(message) {
-		regexEmotes(
-			message,
-			globalEmoteRegex,
-			code =>
-				`https://cdn.frankerfacez.com/emote/${globalEmotes[code].id}/${globalEmotes[code].highestRes}`,
-			() => "FFZ Global Emote"
-		)
+		regexEmotes(message, globalEmoteRegex, code => ({
+			url: `https://cdn.frankerfacez.com/emote/${globalEmotes[code].id}/${globalEmotes[code].highestRes}`,
+			info: "FFZ Global Emote",
+		}))
 		const emotes = channelEmotes.get(message.channel_id)
 		const regex = emoteRegexes.get(message.channel_id)
 		if (emotes && regex)
-			regexEmotes(
-				message,
-				regex,
-				code => `https://cdn.frankerfacez.com/emote/${emotes[code].id}/${emotes[code].highestRes}`,
-				() => "FFZ Channel Emote"
-			)
+			regexEmotes(message, regex, code => ({
+				url: `https://cdn.frankerfacez.com/emote/${emotes[code].id}/${emotes[code].highestRes}`,
+				info: "FFZ Channel Emote",
+			}))
 	},
 }

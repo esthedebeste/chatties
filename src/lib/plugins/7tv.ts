@@ -1,5 +1,5 @@
-import type { Plugin } from "./plugin-api"
 import { fetch, ResponseType } from "@tauri-apps/api/http"
+import type { Plugin } from "./plugin-api"
 import { buildRegex, regexEmotes } from "./regex-based"
 
 // todo: badges and maybe paints?
@@ -112,7 +112,6 @@ export const plugin: Plugin = {
 		console.log("Built regex", globalEmoteRegex, "for global", globalEmotes)
 	},
 	async channelId(channel, id) {
-		if (channelEmotes.has(id)) return
 		const response = await fetch(`https://7tv.io/v3/users/twitch/${id}`, {
 			method: "GET",
 			responseType: ResponseType.JSON,
@@ -134,20 +133,16 @@ export const plugin: Plugin = {
 		channelEmotes.set(id, emoteMap)
 	},
 	message(message) {
-		regexEmotes(
-			message,
-			globalEmoteRegex,
-			code => `https://cdn.7tv.app/emote/${globalEmotes[code].data.id}/3x`,
-			() => "7tv Global Emote"
-		)
+		regexEmotes(message, globalEmoteRegex, code => ({
+			url: `https://cdn.7tv.app/emote/${globalEmotes[code].data.id}/3x`,
+			info: "7tv Global Emote",
+		}))
 		const emotes = channelEmotes.get(message.channel_id)
 		const regex = emoteRegexes.get(message.channel_id)
 		if (emotes && regex)
-			regexEmotes(
-				message,
-				regex,
-				code => `https://cdn.7tv.app/emote/${emotes[code].data.id}/3x`,
-				() => "7tv Channel Emote"
-			)
+			regexEmotes(message, regex, code => ({
+				url: `https://cdn.7tv.app/emote/${emotes[code].data.id}/3x`,
+				info: "7tv Channel Emote",
+			}))
 	},
 }

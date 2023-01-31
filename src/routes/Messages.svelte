@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { messageStore } from "$lib/api"
+	import { channelIds, currentChannel, messageStore } from "$lib/api"
 	import Message from "$lib/chat/Message.svelte"
-	import { getContext, onMount } from "svelte"
-	import { clone } from "$lib/utils"
-	import type { Readable } from "svelte/store"
+	import { onMount } from "svelte"
 	let messageElement: HTMLUListElement
 
 	function scrollDown(force = false) {
@@ -13,7 +11,6 @@
 		if (force || atBottom) setTimeout(() => messageElement.scroll(0, messageElement.scrollHeight)) // scroll to bottom again to account for the new message
 	}
 
-	const currentChannel = getContext<Readable<string>>("currentChannel")
 	$: currentChannelLogin = $currentChannel.toLowerCase()
 	$: messages = messageStore(currentChannelLogin)
 	$: {
@@ -22,11 +19,22 @@
 		scrollDown()
 	}
 	onMount(() => scrollDown(true))
+
+	function reload(event: KeyboardEvent) {
+		if (event.key === "F5" || (event.ctrlKey && event.key === "r")) {
+			event.preventDefault()
+
+			console.log("Reloading channel", $currentChannel)
+			channelIds.delete($currentChannel) // reload channel (clear cache basically)
+		}
+	}
 </script>
+
+<svelte:window on:keydown={reload} />
 
 <ul bind:this={messageElement}>
 	{#each $messages as msg (msg.message_id)}
-		<li><Message message={clone(msg)} /></li>
+		<li><Message message={msg} /></li>
 	{/each}
 </ul>
 
@@ -38,7 +46,6 @@
 		margin: 0;
 		flex: 1;
 		overflow-y: auto; /* scrollable if too large */
-		border-top: 1px solid #777;
 	}
 	li {
 		word-wrap: break-word;

@@ -43,7 +43,7 @@ export interface Message {
 	}
 	emotes: Emote[]
 	message_id: string
-	server_timestamp: string
+	server_timestamp: Date
 	source: {
 		tags: {
 			color: HexColor

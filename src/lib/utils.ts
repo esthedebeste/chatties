@@ -1,5 +1,4 @@
 import type { HexColor } from "./types/message"
-import rfdc from "rfdc"
 
 interface CharRange {
 	start: number
@@ -27,9 +26,7 @@ export function extendMessage<T extends { char_range: CharRange }>(
 	return parts.filter(x => x !== "" && x !== " ")
 }
 
-export const clone = rfdc()
-
-export const randomHex = (): HexColor => {
+export function randomHex(): HexColor {
 	const rgb = [Math.random(), Math.random(), Math.random()]
 	const max = Math.max(...rgb)
 	return `#${rgb

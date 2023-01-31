@@ -18,8 +18,7 @@ pub struct Credentials {
 
 impl Credentials {
     pub fn write(&self, app: &AppHandle) -> Result<()> {
-        let app_data_dir = get_data_dir(app)?;
-        let path = app_data_dir.join("credentials.json");
+        let path = get_data_dir(app)?.join("credentials.json");
         let file = File::create(path)?;
         let writer = BufWriter::new(file);
         serde_json::to_writer(writer, &self)?;

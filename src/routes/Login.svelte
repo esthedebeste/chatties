@@ -12,32 +12,49 @@
 	import { logIn, logOut } from "$lib/api"
 	import { credentials } from "$lib/api/credentials"
 	import * as tauri from "@tauri-apps/api/tauri"
-	const login = async () => {
+	async function login() {
 		await tauri.invoke("open_login")
 		const token = prompt("Enter your login token (check your browser)")
 		if (!token) throw new Error("No login token provided")
 		const info = schema.parse(JSON.parse(token))
 		await logIn(info.client_id, info.access_token)
 	}
-	const logout = () => logOut()
 </script>
 
-<div>
-	{#if $credentials !== undefined}
-		Logged in as {$credentials.creds.credentials.login}
-	{:else}
-		Not logged in
-	{/if}
-	<div>
-		<button on:click={login}>
-			{#if $credentials === undefined}
-				Log In
-			{:else}
-				Relog
-			{/if}
-		</button>
+<div class="root">
+	<div class="logged-in-as">
 		{#if $credentials !== undefined}
-			<button on:click={logout}>Log Out</button>
+			<span class="light">Logged in as </span>
+			<div>{$credentials.creds.credentials.login}</div>
+		{:else}
+			Not logged in
 		{/if}
 	</div>
+	<button on:click={login}>
+		{#if $credentials === undefined}
+			Log In
+		{:else}
+			Relog
+		{/if}
+	</button>
+	{#if $credentials !== undefined}
+		<button on:click={logOut}>Log Out</button>
+	{/if}
 </div>
+
+<style>
+	.light {
+		color: #aaa;
+	}
+
+	.logged-in-as {
+		grid-area: logged-in-as;
+	}
+
+	.root {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr 1fr;
+		grid-template: "logged-in-as logged-in-as" "login relog";
+	}
+</style>

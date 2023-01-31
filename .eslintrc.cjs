@@ -30,5 +30,7 @@ module.exports = {
 	},
 	rules: {
 		"no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
+		"func-style": ["error", "declaration"],
+		"prefer-arrow-callback": ["error", { allowUnboundThis: true }],
 	},
 }

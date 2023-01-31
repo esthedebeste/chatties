@@ -1,5 +1,5 @@
-import type { Message } from "../types/message"
 import * as zod from "zod"
+import type { Message } from "../types/message"
 import "./regex-based" // Get the regexEmotes function into the global scope
 
 export type Nodes = ChildNode[]
@@ -13,9 +13,9 @@ export interface Plugin {
 	// Called when the plugin is loaded
 	init?: () => void | Promise<void>
 	// Called when the plugin is unloaded
-	destroy?: () => void
+	destroy?: () => void | Promise<void>
 	// Called when a channel is joined
-	join?: (channel: string) => void
+	join?: (channel: string) => void | Promise<void>
 	// Called when we find out the id of a channel (after joining, first message)
 	channelId?: (channel: string, id: string) => void | Promise<void>
 	// Called when a channel is left

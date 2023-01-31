@@ -1,6 +1,6 @@
 [package]
 name = "chatties"
-version = "0.1.0"
+version = "0.2.0"
 description = "twitch chat client :3"
 authors = ["esthedebeste"]
 license = "MIT"
@@ -19,6 +19,7 @@ twitch-irc = { version = "5.0.0", features = ["with-serde", "transport-tcp"] }
 tokio = "1.24.2"
 open = "3.2.0"
 anyhow = "1.0.68"
+reqwest = { version = "0.11.14", features = ["json"] }
 
 [features]
 default = ["custom-protocol"]

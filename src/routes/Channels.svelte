@@ -1,11 +1,8 @@
 <script lang="ts">
-	import { getContext } from "svelte"
-	import type { Writable } from "svelte/store"
-	import { joinedChannels, leaveChannel } from "$lib/api"
+	import { currentChannel, joinedChannels, leaveChannel } from "$lib/api"
 	import Username from "$lib/chat/Username.svelte"
 
-	let currentChannel = getContext<Writable<string>>("currentChannel")
-	const keydown = (event: KeyboardEvent) => {
+	function keydown(event: KeyboardEvent) {
 		if (!event.ctrlKey) return
 		if (event.shiftKey) {
 			// move channels with ctrl+shift+left/right

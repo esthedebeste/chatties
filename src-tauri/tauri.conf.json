@@ -62,7 +62,10 @@
 		},
 		"security": {
 			"csp": {
-				"default-src": ["'self'", "asset:", "https://asset.localhost"]
+				"default-src": ["*"],
+				"script-src": ["'self'", "asset:", "https://asset.localhost/"],
+				"style-src": ["'self'", "'unsafe-inline'", "asset:", "https://asset.localhost/"],
+				"img-src": ["'self'", "data:", "*"]
 			}
 		},
 		"updater": {

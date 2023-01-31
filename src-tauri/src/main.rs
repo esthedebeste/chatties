@@ -3,15 +3,17 @@
     windows_subsystem = "windows"
 )]
 mod credentials;
+mod message_history;
 mod utils;
 
 use anyhow::Result;
 use credentials::Credentials;
-
+use message_history::get_recent_messages;
+use std::fs::create_dir_all;
 use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Manager, Window};
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::{IRCMessage, ServerMessage};
+use twitch_irc::message::ServerMessage;
 use twitch_irc::TwitchIRCClient as GTwitchIRCClient;
 use twitch_irc::{ClientConfig, SecureTCPTransport};
 use utils::get_data_dir;
@@ -21,6 +23,7 @@ struct TwitchState {
     read_client: TwitchIRCClient,
     credentials: Mutex<Credentials>,
     write_client: Mutex<TwitchIRCClient>,
+    reqwest: reqwest::Client,
 }
 
 #[tauri::command]
@@ -29,16 +32,29 @@ async fn get_credentials(state: tauri::State<'_, TwitchState>) -> Result<Credent
 }
 
 #[tauri::command]
-fn join_channel(state: tauri::State<TwitchState>, channel: String) -> Result<(), String> {
+async fn join_channel(
+    window: Window,
+    state: tauri::State<'_, TwitchState>,
+    channel: &str,
+) -> Result<(), String> {
+    let messages = get_recent_messages(&state.reqwest, channel).await;
+    if let Ok(messages) = messages {
+        for message in messages {
+            emit_irc(&window, message).map_err(|err| err.to_string())?;
+        }
+    } else {
+        eprintln!("Failed to get recent messages: {:?}", messages);
+        // allow error to pass through, history is not critical
+    }
     state
         .read_client
-        .join(channel.clone())
+        .join(channel.to_owned())
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn leave_channel(state: tauri::State<TwitchState>, channel: String) {
-    state.read_client.part(channel.clone())
+    state.read_client.part(channel)
 }
 
 #[tauri::command]
@@ -88,26 +104,26 @@ async fn send_message(
         .map_err(|e| e.to_string())
 }
 
-async fn emit_irc(window: &Window, message: ServerMessage) -> Result<()> {
+fn emit_irc(window: &Window, message: ServerMessage) -> Result<()> {
     match message {
         ServerMessage::Privmsg(msg) => window.emit("priv-msg", msg)?,
-        _ => {}
+        _ => println!("Unhandled message: {:?}", message),
     }
     Ok(())
 }
 
 #[tauri::command]
-async fn process_raw_irc(window: Window, raw_irc: &str) -> Result<(), String> {
-    let irc_message = IRCMessage::parse(raw_irc).map_err(|err| err.to_string())?;
-    let server_message = ServerMessage::try_from(irc_message).map_err(|err| err.to_string())?;
-    emit_irc(&window, server_message)
-        .await
-        .map_err(|err| err.to_string())
+async fn open_login() -> Result<(), String> {
+    open::that("https://chatties-auth.esthe.live/").map_err(|err| err.to_string())
 }
 
 #[tauri::command]
-async fn open_login() -> Result<(), String> {
-    open::that("https://chatties-auth.esthe.live/").map_err(|err| err.to_string())
+async fn open_plugin_dir(app: AppHandle) -> Result<(), String> {
+    let plugins_dir = get_data_dir(&app)
+        .map_err(|err| err.to_string())?
+        .join("plugins");
+    create_dir_all(&plugins_dir).map_err(|err| err.to_string())?;
+    open::that(plugins_dir).map_err(|err| err.to_string())
 }
 
 #[tauri::command]
@@ -122,7 +138,8 @@ async fn get_plugins(app: AppHandle) -> Result<Vec<String>, String> {
     for entry in std::fs::read_dir(plugins_dir).map_err(|err| err.to_string())? {
         let entry = entry.map_err(|err| err.to_string())?;
         let path = entry.path();
-        if path.is_file() {
+        let ext = path.extension();
+        if matches!(ext, Some(ext) if ext=="js") && path.is_file() {
             plugins.push(path.to_str().unwrap().to_string());
         }
     }
@@ -143,11 +160,12 @@ async fn main() -> Result<()> {
                 credentials: Mutex::new(credentials),
                 read_client,
                 write_client: Mutex::new(write_client),
+                reqwest: reqwest::Client::new(),
             });
             let main_window = app.get_window("main").expect("Failed to get main window");
             tauri::async_runtime::spawn(async move {
                 while let Some(message) = incoming_messages.recv().await {
-                    if let Err(error) = emit_irc(&main_window, message.clone()).await {
+                    if let Err(error) = emit_irc(&main_window, message.clone()) {
                         eprintln!("Error while emitting IRC message: {}", error);
                     }
                 }
@@ -160,10 +178,10 @@ async fn main() -> Result<()> {
             log_out,
             join_channel,
             leave_channel,
-            process_raw_irc,
             send_message,
             open_login,
-            get_plugins
+            get_plugins,
+            open_plugin_dir
         ])
         .run(tauri::generate_context!())?;
     Ok(())

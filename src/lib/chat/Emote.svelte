@@ -8,7 +8,7 @@
 	export let width: string | undefined = undefined
 	export let verticalAlign: string | undefined = undefined
 	let emote: HTMLImageElement
-	const hover = () => {
+	function hover() {
 		if (!emote) return
 		tooltip.set({
 			name,
@@ -16,7 +16,9 @@
 			emote,
 		})
 	}
-	const unhover = () => tooltip.set(undefined)
+	function unhover() {
+		tooltip.set(undefined)
+	}
 </script>
 
 <img

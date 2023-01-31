@@ -1,21 +1,26 @@
-import type { Message } from "../types/message"
+import type { Emote, Message } from "../types/message"
 
-export const buildRegex = (emotes: string[]) =>
-	new RegExp(`(?<=^|\\s)(${emotes.join("|")})(?=$|\\s)`, "g")
+export function buildRegex(emotes: string[]) {
+	return new RegExp(`(?<=^|\\s)(${emotes.join("|")})(?=$|\\s)`, "g")
+}
+
+type FunctionOrValue<T> = T | ((match: string) => T)
+
+type CertainRequired<T, K extends keyof T> = Partial<Omit<T, K>> & Required<Pick<T, K>>
 
 export function regexEmotes(
 	message: Message,
 	regex: RegExp,
-	resolveEmoteUrl: (match: string) => string,
-	resolveInfo: (match: string) => string
+	emote_: FunctionOrValue<CertainRequired<Emote, "info" | "url">>
 ) {
+	const emote = typeof emote_ === "function" ? emote_ : () => emote_
 	const matches = message.message_text.matchAll(regex)
 	if (!matches) return
 	for (const { 0: code, index } of matches) {
-		const url = resolveEmoteUrl(code)
-		const info = resolveInfo(code)
 		const start = index as number
-		message.emotes.push({ code, char_range: { start, end: start + code.length }, info, url })
+		message.emotes.push(
+			Object.assign({ code, char_range: { start, end: start + code.length } }, emote(code))
+		)
 	}
 }
 
