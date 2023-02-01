@@ -46,6 +46,11 @@ jobs:
       - name: Build the app
         run: pnpm build
 
+      - name: Update tag latest
+        uses: EndBug/latest-tag@latest
+        with:
+          ref: nightly
+
       - name: Release
         uses: ncipollo/release-action@v1.12.0
         with:
@@ -56,3 +61,5 @@ jobs:
           prerelease: true
           name: Nightly
           tag: nightly
+          omitNameDuringUpdate: true
+          omitBodyDuringUpdate: true
