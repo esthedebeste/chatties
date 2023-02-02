@@ -1,8 +1,8 @@
 import { pluginVerifier, type Plugin } from "./plugins/plugin-api"
 import type { Message } from "./types/message"
 // built-in plugins
-import { invoke } from "@tauri-apps/api"
 import { convertFileSrc } from "@tauri-apps/api/tauri"
+import { invoke } from "./api"
 import { plugin as sevenTvPlugin } from "./plugins/7tv"
 import { plugin as betterttvPlugin } from "./plugins/betterttv"
 import { plugin as ffzPlugin } from "./plugins/ffz"
@@ -22,7 +22,7 @@ addPlugin(betterttvPlugin)
 addPlugin(sevenTvPlugin)
 console.log("Loaded integrated twitch-native, frankerfacez, betterttv, and 7tv plugins")
 {
-	const plugins = await invoke<string[]>("get_plugins")
+	const plugins = await invoke("get_plugins")
 	await Promise.allSettled(
 		plugins.map(async path => {
 			const uri = convertFileSrc(path)
@@ -45,11 +45,11 @@ await Promise.allSettled(
 console.log("Initialized all plugins")
 
 export async function join(channel: string) {
-	for (const plugin of plugins) await plugin.join?.(channel)
+	await Promise.allSettled(plugins.map(plugin => plugin.join?.(channel)))
 }
 
 export async function channelId(channel: string, id: string): Promise<void> {
-	for (const plugin of plugins) await plugin.channelId?.(channel, id)
+	await Promise.allSettled(plugins.map(plugin => plugin.channelId?.(channel, id)))
 }
 
 export function leave(channel: string) {

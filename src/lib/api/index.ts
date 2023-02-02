@@ -1,18 +1,15 @@
+import "$lib/plugins" // always import plugins before using api
+import * as plugins from "$lib/plugins"
+import type { HexColor, Message } from "$lib/types/message"
 import { fetch, ResponseType } from "@tauri-apps/api/http"
-import { invoke } from "@tauri-apps/api/tauri"
 import { appWindow } from "@tauri-apps/api/window"
 import { onMount } from "svelte"
 import { get, writable, type Writable } from "svelte/store"
-import { credentials } from "./api/credentials"
-import * as plugins from "./plugins"
-import type { HexColor, Message } from "./types/message"
-
-export class ChattiesError extends Error {
-	constructor(message: string) {
-		super(message)
-		this.name = "ChattiesError"
-	}
-}
+import { credentials } from "./credentials"
+import { ChattiesError } from "./error"
+import { invoke } from "./smart-invoke"
+export * from "./error"
+export * from "./smart-invoke"
 
 export const joinedChannels = writable<string[]>([])
 
@@ -62,19 +59,12 @@ export async function logIn(clientId: string, token: string) {
 	if (json.data.length === 0) throw new ChattiesError("Failed to log in, no user data")
 	const login = json.data[0].login
 	await invoke("log_in", { login, token, clientId })
-	credentials.set({
-		creds: { credentials: { login, token } },
-		client_id: clientId,
-	})
+	credentials.set({ login, token, client_id: clientId })
 }
 
 export async function logOut() {
 	await invoke("log_out")
 	credentials.set(undefined)
-}
-
-export async function processRawIrcs(rawIrcs: string[]) {
-	await invoke("process_raw_ircs", { rawIrcs })
 }
 
 export async function sendMessage(channel: string, message: string) {

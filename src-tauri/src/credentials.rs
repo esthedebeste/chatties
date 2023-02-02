@@ -1,18 +1,21 @@
 use std::{
+    convert::Infallible,
     fs::File,
     io::{BufReader, BufWriter},
 };
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
+use async_trait::async_trait;
+use macros::command_struct;
 use tauri::{App, AppHandle};
-use twitch_irc::login::StaticLoginCredentials;
+use twitch_irc::login::{CredentialsPair, LoginCredentials};
 
 use crate::utils::get_data_dir;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[command_struct]
 pub struct Credentials {
-    pub creds: StaticLoginCredentials,
+    pub login: String,
+    pub token: Option<String>,
     pub client_id: Option<String>,
 }
 
@@ -32,13 +35,32 @@ impl Credentials {
         }
         let file = File::open(path)?;
         let reader = BufReader::new(file);
-        Ok(serde_json::from_reader(reader)?)
+        Ok(serde_json::from_reader(reader).unwrap_or_default())
     }
 
     pub fn anonymous() -> Credentials {
         Credentials {
-            creds: StaticLoginCredentials::anonymous(),
+            login: "justinfan1".to_owned(),
+            token: None,
             client_id: None,
         }
+    }
+}
+
+#[async_trait]
+impl LoginCredentials for Credentials {
+    type Error = Infallible;
+
+    async fn get_credentials(&self) -> Result<CredentialsPair, Infallible> {
+        Ok(CredentialsPair {
+            login: self.login.clone(),
+            token: self.token.clone(),
+        })
+    }
+}
+
+impl Default for Credentials {
+    fn default() -> Self {
+        Credentials::anonymous()
     }
 }

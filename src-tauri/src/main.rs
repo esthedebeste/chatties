@@ -2,23 +2,26 @@
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
 )]
+colon_3_init!();
+
 mod credentials;
 mod message_history;
 mod utils;
 
 use anyhow::Result;
 use credentials::Credentials;
+use macros::{colon_3_init, command};
 use message_history::get_recent_messages;
 use std::fs::create_dir_all;
 use tauri::async_runtime::Mutex;
+use tauri::utils::debug_eprintln;
 use tauri::{AppHandle, Manager, Window};
-use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::ServerMessage;
 use twitch_irc::TwitchIRCClient as GTwitchIRCClient;
 use twitch_irc::{ClientConfig, SecureTCPTransport};
 use utils::get_data_dir;
 
-type TwitchIRCClient = GTwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>;
+type TwitchIRCClient = GTwitchIRCClient<SecureTCPTransport, Credentials>;
 struct TwitchState {
     read_client: TwitchIRCClient,
     credentials: Mutex<Credentials>,
@@ -26,12 +29,12 @@ struct TwitchState {
     reqwest: reqwest::Client,
 }
 
-#[tauri::command]
+#[command]
 async fn get_credentials(state: tauri::State<'_, TwitchState>) -> Result<Credentials, ()> {
     Ok(state.credentials.lock().await.clone())
 }
 
-#[tauri::command]
+#[command]
 async fn join_channel(
     window: Window,
     state: tauri::State<'_, TwitchState>,
@@ -52,12 +55,12 @@ async fn join_channel(
         .map_err(|e| e.to_string())
 }
 
-#[tauri::command]
+#[command]
 fn leave_channel(state: tauri::State<TwitchState>, channel: String) {
     state.read_client.part(channel)
 }
 
-#[tauri::command]
+#[command]
 async fn log_in(
     app: AppHandle,
     state: tauri::State<'_, TwitchState>,
@@ -65,31 +68,31 @@ async fn log_in(
     token: String,
     client_id: String,
 ) -> Result<(), String> {
-    let login_creds = StaticLoginCredentials::new(login, Some(token));
     let creds = Credentials {
-        creds: login_creds.clone(),
+        login,
+        token: Some(token),
         client_id: Some(client_id),
     };
     creds.write(&app).map_err(|e| e.to_string())?;
-    *state.credentials.lock().await = creds;
-    let (mut inc, write_client) = TwitchIRCClient::new(ClientConfig::new_simple(login_creds));
+    *state.credentials.lock().await = creds.clone();
+    let (mut inc, write_client) = TwitchIRCClient::new(ClientConfig::new_simple(creds));
     inc.close();
     *state.write_client.lock().await = write_client;
     Ok(())
 }
 
-#[tauri::command]
+#[command]
 async fn log_out(app: AppHandle, state: tauri::State<'_, TwitchState>) -> Result<(), String> {
     let creds = Credentials::anonymous();
     creds.write(&app).map_err(|e| e.to_string())?;
-    *state.credentials.lock().await = creds;
-    let (mut inc, write_client) = TwitchIRCClient::new(ClientConfig::default());
+    *state.credentials.lock().await = creds.clone();
+    let (mut inc, write_client) = TwitchIRCClient::new(ClientConfig::new_simple(creds));
     inc.close();
     *state.write_client.lock().await = write_client;
     Ok(())
 }
 
-#[tauri::command]
+#[command]
 async fn send_message(
     state: tauri::State<'_, TwitchState>,
     message: String,
@@ -107,17 +110,19 @@ async fn send_message(
 fn emit_irc(window: &Window, message: ServerMessage) -> Result<()> {
     match message {
         ServerMessage::Privmsg(msg) => window.emit("priv-msg", msg)?,
-        _ => println!("Unhandled message: {:?}", message),
+        _ => {
+            debug_eprintln!("Unhandled message: {:?}", message);
+        }
     }
     Ok(())
 }
 
-#[tauri::command]
+#[command]
 async fn open_login() -> Result<(), String> {
     open::that("https://chatties-auth.esthe.live/").map_err(|err| err.to_string())
 }
 
-#[tauri::command]
+#[command]
 async fn open_plugin_dir(app: AppHandle) -> Result<(), String> {
     let plugins_dir = get_data_dir(&app)
         .map_err(|err| err.to_string())?
@@ -126,7 +131,7 @@ async fn open_plugin_dir(app: AppHandle) -> Result<(), String> {
     open::that(plugins_dir).map_err(|err| err.to_string())
 }
 
-#[tauri::command]
+#[command]
 async fn get_plugins(app: AppHandle) -> Result<Vec<String>, String> {
     let plugins_dir = get_data_dir(&app)
         .map_err(|err| err.to_string())?
@@ -152,9 +157,9 @@ async fn main() -> Result<()> {
         .setup(|app| {
             let credentials = Credentials::read(app)?;
             let (mut incoming_messages, read_client) =
-                TwitchIRCClient::new(ClientConfig::default());
+                TwitchIRCClient::new(ClientConfig::new_simple(Credentials::anonymous()));
             let (mut incoming_write_messages, write_client) =
-                TwitchIRCClient::new(ClientConfig::new_simple(credentials.creds.clone()));
+                TwitchIRCClient::new(ClientConfig::new_simple(credentials.clone()));
             incoming_write_messages.close();
             app.manage(TwitchState {
                 credentials: Mutex::new(credentials),

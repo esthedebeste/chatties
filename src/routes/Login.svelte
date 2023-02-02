@@ -9,11 +9,10 @@
 </script>
 
 <script lang="ts">
-	import { logIn, logOut } from "$lib/api"
+	import { invoke, logIn, logOut } from "$lib/api"
 	import { credentials } from "$lib/api/credentials"
-	import * as tauri from "@tauri-apps/api/tauri"
 	async function login() {
-		await tauri.invoke("open_login")
+		await invoke("open_login")
 		const token = prompt("Enter your login token (check your browser)")
 		if (!token) throw new Error("No login token provided")
 		const info = schema.parse(JSON.parse(token))
@@ -25,7 +24,7 @@
 	<div class="logged-in-as">
 		{#if $credentials !== undefined}
 			<span class="light">Logged in as </span>
-			<div>{$credentials.creds.credentials.login}</div>
+			<div>{$credentials.login}</div>
 		{:else}
 			Not logged in
 		{/if}
