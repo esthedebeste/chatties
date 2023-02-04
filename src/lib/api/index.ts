@@ -103,17 +103,18 @@ export function messageStore(channel: string) {
 }
 
 const channelIdPromises = new Map<string, Promise<void>>()
+
+export function setChannelId(channel: string, id: string) {
+	channelIds.set(channel, id)
+	channelIdPromises.set(channel, plugins.channelId(channel, id))
+}
+
 await appWindow.listen<Message>("priv-msg", async event => {
 	const message = event.payload
 	message.server_timestamp = new Date(message.server_timestamp)
 	console.log("Received message", message)
-	if (!channelIds.has(message.channel_login)) {
-		channelIds.set(message.channel_login, message.channel_id)
-		channelIdPromises.set(
-			message.channel_login,
-			plugins.channelId(message.channel_login, message.channel_id)
-		)
-	}
+	if (!channelIds.has(message.channel_login))
+		setChannelId(message.channel_login, message.channel_id)
 	await channelIdPromises.get(message.channel_login)
 	plugins.message(message)
 	messageStore(message.channel_login).update(msgs => {

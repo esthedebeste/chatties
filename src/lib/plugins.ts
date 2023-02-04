@@ -3,6 +3,7 @@ import type { Message } from "./types/message"
 // built-in plugins
 import { convertFileSrc } from "@tauri-apps/api/tauri"
 import { invoke } from "./api"
+import type { AutocompleteRequest } from "./autocomplete"
 import { plugin as sevenTvPlugin } from "./plugins/7tv"
 import { plugin as betterttvPlugin } from "./plugins/betterttv"
 import { plugin as ffzPlugin } from "./plugins/ffz"
@@ -58,4 +59,13 @@ export function leave(channel: string) {
 
 export function message(message: Message): void {
 	for (const plugin of plugins) plugin.message?.(message)
+}
+
+export function autocomplete(request: AutocompleteRequest) {
+	const results: string[] = []
+	for (const plugin of plugins) {
+		const pluginResults = plugin.autocomplete?.(request)
+		if (pluginResults) results.push(...pluginResults)
+	}
+	return results
 }

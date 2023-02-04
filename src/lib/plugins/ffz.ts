@@ -1,6 +1,6 @@
 import { fetch, ResponseType } from "@tauri-apps/api/http"
 import type { Plugin } from "./plugin-api"
-import { buildRegex, regexEmotes } from "./regex-based"
+import { buildRegex, regexEmotes, wordAutocomplete } from "./shared"
 
 // todo: badges (https://api.frankerfacez.com/v1/badges/ids)
 // would require a slight change to the Badge type (background color)
@@ -53,8 +53,8 @@ interface EmoteSet {
 	emoticons: Emote[]
 }
 
-const globalEmotes: Record<string, Emote> = {}
-const channelEmotes = new Map<string, Record<string, Emote>>()
+const globalEmotes = new Map<string, Emote>()
+const channelEmotes = new Map<string, Map<string, Emote>>()
 let globalEmoteRegex: RegExp
 const emoteRegexes = new Map<string, RegExp>()
 
@@ -69,13 +69,11 @@ export const plugin: Plugin = {
 			default_sets: number[]
 			sets: Record<number, EmoteSet>
 		}
-		const emoteNames = [] as string[]
 		for (const emote of data.default_sets.flatMap(set => data.sets[set].emoticons)) {
 			emote.highestRes = Math.max(...Object.keys(emote.urls).map(Number))
-			globalEmotes[emote.name] = emote
-			emoteNames.push(emote.name)
+			globalEmotes.set(emote.name, emote)
 		}
-		globalEmoteRegex = buildRegex(emoteNames)
+		globalEmoteRegex = buildRegex([...globalEmotes.keys()])
 		console.log("Built regex", globalEmoteRegex, "for global", globalEmotes)
 	},
 	async channelId(channel, id) {
@@ -88,29 +86,37 @@ export const plugin: Plugin = {
 			room: Room
 			sets: Record<number, EmoteSet>
 		}
-		const emoteMap: Record<string, Emote> = {}
-		const emoteNames = [] as string[]
+		const emotes = new Map<string, Emote>()
 		for (const emote of data.sets[data.room.set].emoticons) {
 			emote.highestRes = Math.max(...Object.keys(emote.urls).map(Number))
-			emoteMap[emote.name] = emote
-			emoteNames.push(emote.name)
+			emotes.set(emote.name, emote)
 		}
-		const regex = buildRegex(emoteNames)
-		console.log("Built regex", regex, "for", emoteMap)
+		const regex = buildRegex([...emotes.keys()])
+		console.log("Built regex", regex, "for", emotes)
 		emoteRegexes.set(id, regex)
-		channelEmotes.set(id, emoteMap)
+		channelEmotes.set(id, emotes)
 	},
 	message(message) {
 		regexEmotes(message, globalEmoteRegex, code => ({
-			url: `https://cdn.frankerfacez.com/emote/${globalEmotes[code].id}/${globalEmotes[code].highestRes}`,
+			url: `https://cdn.frankerfacez.com/emote/${globalEmotes.get(code)?.id}/${
+				globalEmotes.get(code)?.highestRes
+			}`,
 			info: "FFZ Global Emote",
 		}))
 		const emotes = channelEmotes.get(message.channel_id)
 		const regex = emoteRegexes.get(message.channel_id)
 		if (emotes && regex)
 			regexEmotes(message, regex, code => ({
-				url: `https://cdn.frankerfacez.com/emote/${emotes[code].id}/${emotes[code].highestRes}`,
+				url: `https://cdn.frankerfacez.com/emote/${emotes.get(code)?.id}/${
+					emotes.get(code)?.highestRes
+				}`,
 				info: "FFZ Channel Emote",
 			}))
+	},
+	autocomplete({ word, channelId }) {
+		return wordAutocomplete(word, [
+			...Object.keys(globalEmotes),
+			...(channelEmotes.get(channelId)?.keys() ?? []),
+		])
 	},
 }

@@ -23,7 +23,7 @@
 
 <img
 	src={source}
-	alt={name}
+	alt="{name} "
 	style:height
 	style:width
 	style:vertical-align={verticalAlign}

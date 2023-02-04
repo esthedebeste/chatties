@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { channelIds, currentChannel, messageStore } from "$lib/api"
+	import { channelIds, currentChannel, messageStore, setChannelId } from "$lib/api"
 	import Message from "$lib/chat/Message.svelte"
 	import { onMount } from "svelte"
 	let messageElement: HTMLUListElement
@@ -25,7 +25,9 @@
 			event.preventDefault()
 
 			console.log("Reloading channel", $currentChannel)
-			channelIds.delete($currentChannel) // reload channel (clear cache basically)
+			const channelId = channelIds.get($currentChannel)
+			channelIds.delete($currentChannel)
+			if (channelId) setChannelId($currentChannel, channelId)
 		}
 	}
 </script>

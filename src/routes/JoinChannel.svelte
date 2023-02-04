@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { joinChannel } from "$lib/api"
+	import { joinChannel, joinedChannels } from "$lib/api"
 
 	let channel = ""
 	async function submit() {
@@ -9,46 +9,40 @@
 </script>
 
 <form on:submit|preventDefault={submit}>
-	<label>
-		<span>Join a channel</span>
-		<input
-			required
-			minlength="4"
-			maxlength="25"
-			bind:value={channel}
-			placeholder="Channel name"
-		/></label
-	><button type="submit">Join</button>
+	<input
+		required
+		minlength="3"
+		maxlength="25"
+		bind:value={channel}
+		placeholder="Add a{$joinedChannels.length > 0 ? 'nother' : ''} channel..."
+	/><button type="submit">Join</button>
 </form>
 
 <style>
-	label span {
-		display: inline-block;
-		vertical-align: middle;
+	form {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
 	}
 	input {
+		flex: 1;
 		background-color: #181818;
 		color: #fff;
-		border: 1px solid #444;
-		border-radius: 0;
-		padding: 0.25em;
-		height: 100%;
-		min-width: 10ch;
-		max-width: 25ch;
 	}
-
-	button {
-		border-radius: 0;
-		height: 100%;
+	input:hover {
+		background-color: #1c1c1c;
 	}
-
 	input:focus {
 		outline: none;
 		background-color: #222;
 	}
-
-	form {
-		padding-left: 0.5ch;
-		border: 1px solid #777;
+	button {
+		border-radius: 0;
+	}
+	form:has(input:hover) button {
+		background-color: #1c1c1c;
+	}
+	form:has(input:focus) button {
+		background-color: #222;
 	}
 </style>

@@ -1,7 +1,7 @@
 use std::{
     convert::Infallible,
     fs::File,
-    io::{BufReader, BufWriter},
+    io::{self, BufReader, BufWriter},
 };
 
 use anyhow::Result;
@@ -28,7 +28,7 @@ impl Credentials {
         Ok(())
     }
 
-    pub fn read(app: &App) -> Result<Credentials> {
+    pub fn read(app: &App) -> io::Result<Credentials> {
         let path = get_data_dir(&app.handle())?.join("credentials.json");
         if !path.exists() {
             return Ok(Credentials::anonymous());

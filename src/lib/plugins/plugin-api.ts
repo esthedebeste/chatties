@@ -1,6 +1,6 @@
 import * as zod from "zod"
+import type { AutocompleteRequest } from "../autocomplete"
 import type { Message } from "../types/message"
-import "./regex-based" // Get the regexEmotes function into the global scope
 
 export type Nodes = ChildNode[]
 export type Badges = {
@@ -22,6 +22,9 @@ export interface Plugin {
 	leave?: (channel: string) => void
 	// Add info to a message (badges, emotes). The `message` parameter is mutable.
 	message?: (message: Message) => void
+	// Autocomplete provider. Returns a list of suggestions for the given word.
+	autocomplete?: (input: AutocompleteRequest) => string[]
+	// !Don't forget to add new hooks to the pluginVerifier!
 }
 
 export const pluginVerifier = zod
@@ -33,5 +36,6 @@ export const pluginVerifier = zod
 		channelId: zod.function().optional(),
 		leave: zod.function().optional(),
 		message: zod.function().args().optional(),
+		autocomplete: zod.function().args().optional(),
 	})
 	.strict()

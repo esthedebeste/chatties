@@ -1,5 +1,6 @@
 import { fetch } from "@tauri-apps/api/http"
 import type { Plugin } from "./plugin-api"
+import { wordAutocomplete } from "./shared"
 
 type BadgeInfo = {
 	image_url_1x: string
@@ -19,6 +20,7 @@ type BadgeSets = Record<
 >
 let badgeSets: BadgeSets = {}
 const customBadges = new Map<string, BadgeSets>()
+const chatters = new Map<string, Set<string>>()
 export const plugin: Plugin = {
 	id: "twitch-native",
 	async init() {
@@ -33,9 +35,11 @@ export const plugin: Plugin = {
 		if (!response.ok) throw new Error("Failed to fetch channel badges")
 		const data = response.data as { badge_sets: BadgeSets }
 		customBadges.set(id, data.badge_sets)
+		chatters.set(id, new Set([channel]))
 		console.log("Loaded custom badges for channel", channel, id, data.badge_sets)
 	},
 	message(message) {
+		chatters.get(message.channel_id)?.add(message.sender.name)
 		for (const emote of message.emotes) {
 			if (!emote.id) continue // not a twitch emote
 			emote.url = `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/dark/3.0`
@@ -67,5 +71,9 @@ export const plugin: Plugin = {
 				badge.info = "Version " + badge.version + "\nUnknown Twitch Badge"
 			}
 		}
+	},
+	autocomplete({ word, channelId }) {
+		if (!word.startsWith("@")) return []
+		return wordAutocomplete(word.slice(1), [...(chatters.get(channelId) ?? [])]).map(n => "@" + n)
 	},
 }

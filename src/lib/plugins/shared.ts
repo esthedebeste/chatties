@@ -24,10 +24,20 @@ export function regexEmotes(
 	}
 }
 
+export function wordAutocomplete(word: string, words: string[]) {
+	return words.filter(w => w.toLowerCase().startsWith(word.toLowerCase()))
+}
+
+type brType = typeof buildRegex
 type reType = typeof regexEmotes
+type waType = typeof wordAutocomplete
 declare global {
+	const buildRegex: brType
 	const regexEmotes: reType
+	const wordAutocomplete: waType
 }
 
 // read-only, useful for plugins
+Object.defineProperty(window, "buildRegex", { value: buildRegex })
 Object.defineProperty(window, "regexEmotes", { value: regexEmotes })
+Object.defineProperty(window, "wordAutocomplete", { value: wordAutocomplete })

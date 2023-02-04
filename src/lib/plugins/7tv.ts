@@ -1,6 +1,6 @@
 import { fetch, ResponseType } from "@tauri-apps/api/http"
 import type { Plugin } from "./plugin-api"
-import { buildRegex, regexEmotes } from "./regex-based"
+import { buildRegex, regexEmotes, wordAutocomplete } from "./shared"
 
 // todo: badges and maybe paints?
 
@@ -87,8 +87,8 @@ interface UserInfo {
 	}
 }
 
-const globalEmotes: Record<string, Emote> = {}
-const channelEmotes = new Map<string, Record<string, Emote>>()
+const globalEmotes = new Map<string, Emote>()
+const channelEmotes = new Map<string, Map<string, Emote>>()
 let globalEmoteRegex: RegExp
 const emoteRegexes = new Map<string, RegExp>()
 export const plugin: Plugin = {
@@ -103,12 +103,10 @@ export const plugin: Plugin = {
 			return
 		}
 		const data = response.data as EmoteSet
-		const emoteNames = [] as string[]
 		for (const emote of data.emotes) {
-			globalEmotes[emote.name] = emote
-			emoteNames.push(emote.name)
+			globalEmotes.set(emote.name, emote)
 		}
-		globalEmoteRegex = buildRegex(emoteNames)
+		globalEmoteRegex = buildRegex([...globalEmotes.keys()])
 		console.log("Built regex", globalEmoteRegex, "for global", globalEmotes)
 	},
 	async channelId(channel, id) {
@@ -121,28 +119,32 @@ export const plugin: Plugin = {
 			return
 		}
 		const data = response.data as UserInfo
-		const emoteMap: Record<string, Emote> = {}
-		const emoteNames = [] as string[]
+		const emotes = new Map<string, Emote>()
 		for (const emote of data.emote_set.emotes) {
-			emoteMap[emote.name] = emote
-			emoteNames.push(emote.name)
+			emotes.set(emote.name, emote)
 		}
-		const regex = buildRegex(emoteNames)
-		console.log("Built regex", regex, "for", emoteMap)
+		const regex = buildRegex([...emotes.keys()])
+		console.log("Built regex", regex, "for", emotes)
 		emoteRegexes.set(id, regex)
-		channelEmotes.set(id, emoteMap)
+		channelEmotes.set(id, emotes)
 	},
 	message(message) {
 		regexEmotes(message, globalEmoteRegex, code => ({
-			url: `https://cdn.7tv.app/emote/${globalEmotes[code].data.id}/3x`,
+			url: `https://cdn.7tv.app/emote/${globalEmotes.get(code)?.data.id}/3x`,
 			info: "7tv Global Emote",
 		}))
 		const emotes = channelEmotes.get(message.channel_id)
 		const regex = emoteRegexes.get(message.channel_id)
 		if (emotes && regex)
 			regexEmotes(message, regex, code => ({
-				url: `https://cdn.7tv.app/emote/${emotes[code].data.id}/3x`,
+				url: `https://cdn.7tv.app/emote/${emotes.get(code)?.data.id}/3x`,
 				info: "7tv Channel Emote",
 			}))
+	},
+	autocomplete({ word, channelId }) {
+		return wordAutocomplete(word, [
+			...Object.keys(globalEmotes),
+			...(channelEmotes.get(channelId)?.keys() ?? []),
+		])
 	},
 }
