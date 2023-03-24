@@ -1,5 +1,5 @@
 import { writable } from "svelte/store"
-import { invoke, type Credentials } from "./smart-invoke"
+import { invoke, type Credentials } from "."
 
 const _startCredentials = await invoke("get_credentials")
 export const credentials = writable<Credentials | undefined>(

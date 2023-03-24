@@ -1,4 +1,4 @@
-import type { Emote, Message } from "../types/message"
+import type { Emote, PrivMessage } from "../types/message"
 
 export function buildRegex(emotes: string[]) {
 	return new RegExp(`(?<=^|\\s)(${emotes.join("|")})(?=$|\\s)`, "g")
@@ -9,7 +9,7 @@ type FunctionOrValue<T> = T | ((match: string) => T)
 type CertainRequired<T, K extends keyof T> = Partial<Omit<T, K>> & Required<Pick<T, K>>
 
 export function regexEmotes(
-	message: Message,
+	message: PrivMessage,
 	regex: RegExp,
 	emote_: FunctionOrValue<CertainRequired<Emote, "info" | "url">>
 ) {

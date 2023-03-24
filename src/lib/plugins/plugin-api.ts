@@ -1,6 +1,6 @@
 import * as zod from "zod"
 import type { AutocompleteRequest } from "../autocomplete"
-import type { Message } from "../types/message"
+import type { PrivMessage } from "../types/message"
 
 export type Nodes = ChildNode[]
 export type Badges = {
@@ -21,7 +21,7 @@ export interface Plugin {
 	// Called when a channel is left
 	leave?: (channel: string) => void
 	// Add info to a message (badges, emotes). The `message` parameter is mutable.
-	message?: (message: Message) => void
+	message?: (message: PrivMessage) => void
 	// Autocomplete provider. Returns a list of suggestions for the given word.
 	autocomplete?: (input: AutocompleteRequest) => string[]
 	// !Don't forget to add new hooks to the pluginVerifier!

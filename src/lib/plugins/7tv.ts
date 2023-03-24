@@ -6,6 +6,8 @@ import { buildRegex, regexEmotes, wordAutocomplete } from "./shared"
 
 interface Emote {
 	id: string
+	/** Added by chatties based on .data.host.files */
+	chattiesUrl: string
 	name: string
 	flags: number
 	timestamp: number
@@ -107,7 +109,7 @@ export const plugin: Plugin = {
 			globalEmotes.set(emote.name, emote)
 		}
 		globalEmoteRegex = buildRegex([...globalEmotes.keys()])
-		console.log("Built regex", globalEmoteRegex, "for global", globalEmotes)
+		console.debug("Built regex", globalEmoteRegex, "for global", globalEmotes)
 	},
 	async channelId(channel, id) {
 		const response = await fetch(`https://7tv.io/v3/users/twitch/${id}`, {
@@ -121,23 +123,30 @@ export const plugin: Plugin = {
 		const data = response.data as UserInfo
 		const emotes = new Map<string, Emote>()
 		for (const emote of data.emote_set.emotes) {
+			emote.data.host.files.sort((a, b) => b.size - a.size) // sort by size, descending
+			const webp = emote.data.host.files.find(f => f.format.toUpperCase() === "WEBP")
+			if (!webp) {
+				console.error("No webp found for emote", emote, "in channel", channel, id)
+				continue
+			}
+			emote.chattiesUrl = `https:${emote.data.host.url}/${webp.name}`
 			emotes.set(emote.name, emote)
 		}
 		const regex = buildRegex([...emotes.keys()])
-		console.log("Built regex", regex, "for", emotes)
+		console.debug("Built regex", regex, "for", emotes)
 		emoteRegexes.set(id, regex)
 		channelEmotes.set(id, emotes)
 	},
 	message(message) {
 		regexEmotes(message, globalEmoteRegex, code => ({
-			url: `https://cdn.7tv.app/emote/${globalEmotes.get(code)?.data.id}/3x`,
+			url: globalEmotes.get(code)?.chattiesUrl ?? "",
 			info: "7tv Global Emote",
 		}))
-		const emotes = channelEmotes.get(message.channel_id)
-		const regex = emoteRegexes.get(message.channel_id)
+		const emotes = channelEmotes.get(message.channel.id)
+		const regex = emoteRegexes.get(message.channel.id)
 		if (emotes && regex)
 			regexEmotes(message, regex, code => ({
-				url: `https://cdn.7tv.app/emote/${emotes.get(code)?.data.id}/3x`,
+				url: emotes.get(code)?.chattiesUrl ?? "",
 				info: "7tv Channel Emote",
 			}))
 	},

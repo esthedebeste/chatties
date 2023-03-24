@@ -1,9 +1,4 @@
-export type HexColor = `#${string}`
-export interface TwitchUserBasics {
-	id: string
-	login: string
-	name: string
-}
+import type { CharRange, PrivMsg as RPrivMessage } from "../api"
 
 export interface Badge {
 	name: string
@@ -17,36 +12,32 @@ export interface Badge {
 export interface Emote {
 	/** @example "LUL" */
 	code: string
-	char_range: {
-		start: number
-		end: number
-	}
+	char_range: CharRange
 	id?: string // native info from twitch
 	/** @example "Twitch Subscriber Emote" */
 	info: string
 	url: string // extensions
 }
 
-export interface Message {
-	channel_login: string
-	channel_id: string
-	message_text: string
-	is_action: boolean
-	sender: TwitchUserBasics
-	badge_info: Badge[]
+export type PrivMessage = RPrivMessage & {
+	type: "privmsg"
+	timestamp: Date
 	badges: Badge[]
-	bits: number | null
-	name_color: {
-		r: number
-		g: number
-		b: number
-	}
 	emotes: Emote[]
-	message_id: string
-	server_timestamp: Date
-	source: {
-		tags: {
-			color: HexColor
-		}
-	}
 }
+
+export interface JoinMessage {
+	type: "join"
+	channel: string
+	users: string[]
+	timestamp: Date
+}
+
+export interface PartMessage {
+	type: "part"
+	channel: string
+	users: string[]
+	timestamp: Date
+}
+
+export type Message = PrivMessage | JoinMessage | PartMessage

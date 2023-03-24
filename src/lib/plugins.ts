@@ -1,5 +1,5 @@
 import { pluginVerifier, type Plugin } from "./plugins/plugin-api"
-import type { Message } from "./types/message"
+import type { PrivMessage } from "./types/message"
 // built-in plugins
 import { convertFileSrc } from "@tauri-apps/api/tauri"
 import { invoke } from "./api"
@@ -57,7 +57,7 @@ export function leave(channel: string) {
 	for (const plugin of plugins) plugin.leave?.(channel)
 }
 
-export function message(message: Message): void {
+export function message(message: PrivMessage): void {
 	for (const plugin of plugins) plugin.message?.(message)
 }
 

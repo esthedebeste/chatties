@@ -1,9 +1,5 @@
-import type { HexColor } from "./types/message"
+import type { CharRange, HexColor } from "./api"
 
-interface CharRange {
-	start: number
-	end: number
-}
 export function extendMessage<T extends { char_range: CharRange }>(
 	text: string,
 	replacements: T[]

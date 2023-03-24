@@ -35,7 +35,7 @@ export const plugin: Plugin = {
 			globalEmotes.set(emote.code, emote)
 		}
 		globalEmoteRegex = buildRegex([...globalEmotes.keys()])
-		console.log("Built regex", globalEmoteRegex, "for global", globalEmotes)
+		console.debug("Built regex", globalEmoteRegex, "for global", globalEmotes)
 	},
 	async channelId(channel, id) {
 		const response = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${id}`)
@@ -51,7 +51,7 @@ export const plugin: Plugin = {
 			emotes.set(emote.code, emote)
 		}
 		const regex = buildRegex([...emotes.keys()])
-		console.log("Built regex", regex, "for", emotes)
+		console.debug("Built regex", regex, "for", emotes)
 		emoteRegexes.set(id, regex)
 		channelEmotes.set(id, emotes)
 	},
@@ -60,8 +60,8 @@ export const plugin: Plugin = {
 			url: `https://cdn.betterttv.net/emote/${globalEmotes.get(code)?.id}/3x`,
 			info: `BTTV Global Emote`,
 		}))
-		const emotes = channelEmotes.get(message.channel_id)
-		const regex = emoteRegexes.get(message.channel_id)
+		const emotes = channelEmotes.get(message.channel.id)
+		const regex = emoteRegexes.get(message.channel.id)
 		if (emotes && regex)
 			regexEmotes(message, regex, code => ({
 				url: `https://cdn.betterttv.net/emote/${emotes.get(code)?.id}/3x`,

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import "$lib/plugins/shared" // globals for plugins
 	import "../global.css"
 	import Login from "./Login.svelte"
 </script>

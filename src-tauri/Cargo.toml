@@ -1,6 +1,6 @@
 [package]
 name = "chatties"
-version = "0.2.0"
+version = "0.3.0"
 description = "twitch chat client :3"
 authors = ["esthedebeste"]
 license = "MIT"
@@ -14,7 +14,7 @@ tauri-build = { version = "1.2", features = [] }
 [dependencies]
 macros = { path = "macros" }
 tauri = { version = "1.2", features = ["devtools", "dialog-ask", "dialog-confirm", "dialog-message", "http-request", "protocol-asset", "shell-open"] }
-twitch-irc = { version = "5.0.0", features = ["with-serde", "transport-tcp"] }
+twitch-irc = { version = "5.0.0", features = ["transport-tcp"] }
 tokio = "1.24.2"
 open = "3.2.0"
 anyhow = "1.0.68"

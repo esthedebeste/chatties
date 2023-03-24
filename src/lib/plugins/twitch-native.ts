@@ -39,7 +39,7 @@ export const plugin: Plugin = {
 		console.log("Loaded custom badges for channel", channel, id, data.badge_sets)
 	},
 	message(message) {
-		chatters.get(message.channel_id)?.add(message.sender.name)
+		chatters.get(message.channel.id)?.add(message.sender.name)
 		for (const emote of message.emotes) {
 			if (!emote.id) continue // not a twitch emote
 			emote.url = `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/dark/3.0`
@@ -47,7 +47,7 @@ export const plugin: Plugin = {
 		}
 
 		for (const badge of message.badges) {
-			const custom = customBadges.get(message.channel_id)
+			const custom = customBadges.get(message.channel.id)
 			if (badge.version === undefined) continue
 			if (
 				custom !== undefined &&

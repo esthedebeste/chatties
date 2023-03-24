@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { channelIds, currentChannel, messageStore, setChannelId } from "$lib/api"
-	import Message from "$lib/chat/Message.svelte"
+	import JoinMessage from "$lib/chat/JoinMessage.svelte"
+	import PartMessage from "$lib/chat/PartMessage.svelte"
+	import PrivMessage from "$lib/chat/PrivMessage.svelte"
 	import { onMount } from "svelte"
 	let messageElement: HTMLUListElement
 
@@ -30,13 +32,24 @@
 			if (channelId) setChannelId($currentChannel, channelId)
 		}
 	}
+	$: displayMessages = $messages
+		.slice(-150)
+		.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
 </script>
 
 <svelte:window on:keydown={reload} />
 
 <ul bind:this={messageElement}>
-	{#each $messages as msg (msg.message_id)}
-		<li><Message message={msg} /></li>
+	{#each displayMessages as msg}
+		<li>
+			{#if msg.type === "privmsg"}
+				<PrivMessage message={msg} />
+			{:else if msg.type === "join"}
+				<JoinMessage message={msg} />
+			{:else if msg.type === "part"}
+				<PartMessage message={msg} />
+			{/if}
+		</li>
 	{/each}
 </ul>
 

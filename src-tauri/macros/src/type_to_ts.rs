@@ -47,20 +47,30 @@ pub fn type_to_ts(ty: &Type) -> Option<String> {
                 }
             } else if first.ident == "String" || first.ident == "str" {
                 "string".to_string()
+            } else if first.ident == "usize"
+            /* || more coming soon */
+            {
+                "number".to_string()
             } else if first.ident == "AppHandle" || first.ident == "Window" {
                 return None;
             } else {
                 first.ident.to_string()
             }
         }
-        Type::Reference(ty) => {
-            format!("{} | null", type_to_ts(&ty.elem)?)
-        }
+        Type::Reference(ty) => type_to_ts(&ty.elem)?,
         Type::Tuple(ty) => {
-            if ty.elems.len() != 0 {
-                todot!()
+            if ty.elems.len() > 0 {
+                format!(
+                    "([{}])",
+                    ty.elems
+                        .iter()
+                        .map(|ty| type_to_ts(ty))
+                        .collect::<Option<Vec<_>>>()?
+                        .join(", ")
+                )
+            } else {
+                "void".to_string()
             }
-            "void".to_string()
         }
         _ => todot!(),
     })

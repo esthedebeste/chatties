@@ -1,4 +1,5 @@
-module.exports = {
+/** @type import("eslint").Linter.Config */
+const config = {
 	root: true,
 	parser: "@typescript-eslint/parser",
 	extends: [
@@ -33,4 +34,7 @@ module.exports = {
 		"func-style": ["error", "declaration"],
 		"prefer-arrow-callback": ["error", { allowUnboundThis: true }],
 	},
+	ignorePatterns: ["*.d.ts"],
 }
+
+module.exports = config
