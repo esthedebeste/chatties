@@ -1,0 +1,36 @@
+type { CharRange, Emote as REmote, PrivMsg as RPrivMessage } from ../api/index.civet
+type { Emote, StyledText, Part } from ./text.civet
+
+export interface Badge
+	name: string
+	title: string
+	version?: string // native info from twitch
+	url: string
+	/** @example "Twitch Badge\nChannel Moderator" */
+	info: string
+
+export type Replacement = Part & char_range: CharRange
+
+export type PrivMessage = RPrivMessage &
+Readonly<
+	/** native twitch emotes! */
+	emotes: REmote[]
+> &
+	type: "privmsg"
+	timestamp: Date
+	badges: Badge[]
+	replacements: Replacement[]
+
+export interface JoinMessage
+	type: "join"
+	channel: string
+	users: string[]
+	timestamp: Date
+
+export interface PartMessage
+	type: "part"
+	channel: string
+	users: string[]
+	timestamp: Date
+
+export type Message = PrivMessage | JoinMessage | PartMessage

@@ -1,0 +1,19 @@
+type { Part as TextPart } from ../types/text.civet
+type { HexColor } from ./index.civet
+{ writable, type Writable } from svelte/store
+
+export decorations := new Map<string, Writable<TextPart[]>>
+
+export function addDecoration(channel: string, ...decoration: TextPart[]): void
+	store := decorations.get channel
+	if store
+		store.update (decorations) =>
+			decorations.push ...decoration
+			decorations
+	else
+		decorations.set channel, writable decoration
+
+export lastSeenColors := writable new Map<string, HexColor> JSON.parse localStorage.getItem("lastSeenColors") || "[]"
+
+lastSeenColors.subscribe (colors) =>
+	localStorage.setItem "lastSeenColors", JSON.stringify [...colors.entries()]

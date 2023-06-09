@@ -1,0 +1,73 @@
+{ fetch, ResponseType } from @tauri-apps/api/http
+type { Plugin } from ./plugin-api.civet
+{ buildRegex, regexEmotes, wordAutocomplete } from ./shared.civet
+
+interface Emote
+	id: string
+	code: string
+	imageType: string
+	animated: boolean
+	userId: string
+	type?: "Channel" | "Shared"
+
+interface User
+	id: string
+	avatar: string
+	bots: []
+	channelEmotes: Emote[]
+	sharedEmotes: Emote[]
+
+globalEmotes := new Map<string, Emote>()
+channelEmotes := new Map<string, Map<string, Emote>>()
+let globalEmoteRegex: RegExp
+emoteRegexes := new Map<string, RegExp>()
+export plugin: Plugin := {
+	id: "betterttv"
+	async init()
+		response := await fetch "https://api.betterttv.net/3/cached/emotes/global",
+			method: "GET"
+			responseType: ResponseType.JSON
+		return unless response.ok
+		data := response.data as Emote[]
+		for emote of data
+			globalEmotes.set emote.code, emote
+
+		globalEmoteRegex = buildRegex [...globalEmotes.keys()]
+		console.debug "Built regex", globalEmoteRegex, "for global", globalEmotes
+
+	async channelId(channel, id)
+		response := await fetch `https://api.betterttv.net/3/cached/users/twitch/${id}`
+		return unless response.ok
+		data := response.data as User
+		emotes := new Map<string, Emote>()
+		for emote of data.channelEmotes
+			emote.type = "Channel"
+			emotes.set emote.code, emote
+
+		for emote of data.sharedEmotes
+			emote.type = "Shared"
+			emotes.set emote.code, emote
+
+		regex := buildRegex [...emotes.keys()]
+		console.debug "Built regex", regex, "for", emotes
+		emoteRegexes.set id, regex
+		channelEmotes.set id, emotes;
+
+	message(message)
+		regexEmotes message, globalEmoteRegex, (code) =>
+			url: `https://cdn.betterttv.net/emote/${globalEmotes.get(code)?.id}/3x`
+			info: `BTTV Global Emote`
+
+		emotes := channelEmotes.get message.channel.id
+		regex := emoteRegexes.get message.channel.id
+		if emotes && regex
+			regexEmotes message, regex, (code) =>
+				url: `https://cdn.betterttv.net/emote/${emotes.get(code)?.id}/3x`
+				info: `BTTV ${emotes.get(code)?.type} Emote`
+
+	autocomplete({ word, channelId })
+		wordAutocomplete word, [
+			...Object.keys(globalEmotes),
+			...(channelEmotes.get(channelId)?.keys() ?? []),
+		]
+}

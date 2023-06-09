@@ -1,0 +1,46 @@
+type { Emote, PrivMessage } from ../types/message
+
+function escapeRegex(string: string)
+	string.replaceAll /[$()*+.?[\\\]^{|}]/g, "\\$&"
+
+export function buildRegex(emotes: string[])
+	new RegExp `(?<=^|\\s)(${emotes.map((emote) => escapeRegex emote).join("|")})(?=$|\\s)`, "g"
+
+type FunctionOrValue<T> = T | ((match: string) => T)
+
+export function regexEmotes(
+	message: PrivMessage,
+	regex: RegExp,
+	emote_: FunctionOrValue<Pick<Emote, "info" | "url">>
+): void
+	emote := typeof emote_ === "function" ? emote_ : () => emote_
+	matches := message.message_text.matchAll regex
+	return unless matches
+	for { 0: code, index } of matches
+		start := index as number
+		message.replacements.push {
+			type: "emote"
+			char_range: { start, end: start + code.length }
+			code
+			...emote(code)
+		}
+
+
+export function wordAutocomplete(word: string, words: string[])
+	words.filter (w) => w.toLowerCase().startsWith word.toLowerCase()
+
+type brType = typeof buildRegex
+type reType = typeof regexEmotes
+type waType = typeof wordAutocomplete
+export type ChattiesPluginUtils = Readonly<
+	buildRegex: brType
+	regexEmotes: reType
+	wordAutocomplete: waType
+>
+
+export pluginUtils: ChattiesPluginUtils := { buildRegex, regexEmotes, wordAutocomplete }
+
+// NOTE: legacy, do not define more globals. Use `init(context)`'s `context.utils` instead. removing in 0.5.0 i think
+Object.defineProperty window, "buildRegex", value: buildRegex
+Object.defineProperty window, "regexEmotes", value: regexEmotes
+Object.defineProperty window, "wordAutocomplete", value: wordAutocomplete

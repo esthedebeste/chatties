@@ -1,0 +1,45 @@
+type { CharRange, HexColor } from ./api/index.civet
+
+export function extendMessage<T extends { char_range: CharRange }>(
+	text: string,
+	replacements: T[]
+): (T | string)[]
+	replacements.sort (a, b) => a.char_range.start - b.char_range.start
+	// remove overlapping replacements
+	for index .= replacements.length - 1; index > 0; index--
+		if replacements[index].char_range.start < replacements[index - 1].char_range.end
+			replacements.splice index, 1
+
+	parts := [] as (T | string)[]
+	lastEnd .= 0
+	for replacement of replacements
+		{ start, end } := replacement.char_range
+		if start > lastEnd
+			parts.push text[lastEnd...start]
+		parts.push replacement
+		lastEnd = end
+
+	if lastEnd < text.length
+		parts.push text[lastEnd...]
+	parts.filter (x) => x !== "" && x !== " "
+
+export function randomHex: HexColor
+	rgb := [Math.random(), Math.random(), Math.random()]
+	max := Math.max(...rgb)
+	`#${rgb
+		.map((x) =>
+			Math.round((x / max) * 255)
+				.toString(16)
+				.padStart 2, "0"
+		).join ""}`
+
+export async function allSettledWithThrow(promises: unknown[]): Promise<void>
+	settled := await.allSettled promises
+	errors := settled
+		.filter((result): result is PromiseRejectedResult => result.status === "rejected")
+	if errors.length > 0
+		if import.meta.env.TAURI_DEBUG
+			console.trace "Errors"
+			for error of errors
+				console.error error
+		throw errors.map .reason

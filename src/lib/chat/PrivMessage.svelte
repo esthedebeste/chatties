@@ -1,13 +1,12 @@
-<script lang="ts">
-	import { extendMessage } from "$lib/utils"
-	import type { PrivMessage } from "../types/message"
-	import Badge from "./Badge.svelte"
-	import Emote from "./Emote.svelte"
-	import Time from "./Time.svelte"
-	import Username from "./Username.svelte"
-
+<script lang="civet">
+	{ extendMessage } from $lib/utils.civet
+	type { PrivMessage } from ../types/message.civet
+	Badge from ./Badge.svelte
+	Time from ./Time.svelte
+	Username from ./Username.svelte
+	RichText from ../RichText.svelte
 	export let message: PrivMessage
-	$: parts = extendMessage(message.message_text, message.emotes)
+	$: parts = extendMessage message.message_text, message.replacements
 </script>
 
 <Time date={message.timestamp} />
@@ -23,8 +22,4 @@
 	<svelte:fragment slot="postfix">:</svelte:fragment>
 </Username>
 
-{#each parts as part}{#if typeof part === "string"}{part}{:else}<Emote
-			source={part.url}
-			name={part.code}
-			extra={part.info}
-		/>{/if}{/each}
+<RichText {parts} />

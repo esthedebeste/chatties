@@ -1,36 +1,37 @@
-<script lang="ts">
-	import { currentChannel, sendMessage } from "$lib/api"
-	import * as auto from "$lib/autocomplete"
+<script lang="civet">
+	{ currentChannel, sendMessage } from $lib/api/index.civet
+	* as auto from $lib/autocomplete.civet
 
-	let message = ""
-	async function submit() {
-		sendMessage($currentChannel, message)
+	message .= ""
+	async function submit()
+		sendMessage $currentChannel, message
 		message = ""
-	}
 
-	let previousAutos: string[] = []
-	let previousAutoIndex = 0
-	async function autocomplete(event: KeyboardEvent) {
-		if (event.key !== "Tab") return
+	previousAutos: string[] .= []
+	previousAutoIndex .= 0
+	function autocomplete(event: KeyboardEvent)
+		if event.ctrlKey && event.code.startsWith "Arrow"
+			event.stopPropagation() // don't move channels around, assume intention is to move cursor
+			return
+		return unless event.key === "Tab"
 		event.preventDefault()
-		const split = message.trimEnd().split(" ")
-		const lastWord = split[split.length - 1]
-		if (!lastWord) return
-		if (lastWord === previousAutos[previousAutoIndex]) {
-			console.log("Continuing autocomplete")
+		split := message.trimEnd().split " "
+		lastWord := split.at -1
+		return unless lastWord
+		if lastWord === previousAutos[previousAutoIndex]
+			console.log "Continuing autocomplete"
 			previousAutoIndex = (previousAutoIndex + 1) % previousAutos.length
 			split[split.length - 1] = previousAutos[previousAutoIndex]
-		} else {
-			const autos = auto.autocomplete(lastWord)
-			if (autos.length === 0) return
+		else
+			autos := auto.autocomplete lastWord
+			return if autos.length === 0
 			autos.sort()
-			console.log("Autocomplete results:", autos)
+			console.log "Autocomplete results:", autos
 			split[split.length - 1] = autos[0]
 			previousAutos = autos
 			previousAutoIndex = 0
-		}
+
 		message = split.join(" ") + " "
-	}
 </script>
 
 <form on:submit|preventDefault={submit}>

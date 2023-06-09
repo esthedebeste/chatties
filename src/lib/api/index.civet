@@ -1,0 +1,179 @@
+import $lib/plugins.civet // always import plugins before using api
+* as plugins from ../plugins.civet
+type { Message, PrivMessage } from ../types/message.civet
+{ ResponseType, fetch } from @tauri-apps/api/http
+{ appWindow } from @tauri-apps/api/window
+{ get, writable, type Writable } from svelte/store
+{ randomHex } from ../utils.civet
+{ credentials } from ./credentials.civet
+{ ChattiesError } from ./error.civet
+{ lastSeenColors } from ./decorations.civet
+{
+	invoke,
+	type HexColor,
+	type Join,
+	type Names,
+	type Part,
+	type RoomState,
+} from ./smart-invoke
+export * from ./error.civet
+export * from ./smart-invoke
+export * from ./decorations.civet
+export joinedChannels := writable<string[]> []
+
+export async function joinChannel(channel: string)
+	for ch of get joinedChannels
+		if ch.toLowerCase() === channel.toLowerCase()
+			return
+	await plugins.join channel
+	joinedChannels.update (channels) =>
+		channels.push channel
+		channels
+
+async function connectToChannel(channel: string)
+	console.log "Connecting to channel", channel
+	await invoke "join_channel", { channel }
+
+export async function leaveChannel(channel: string)
+	await invoke "leave_channel", { channel }
+	plugins.leave channel
+	joinedChannels.update (channels) =>
+		index := channels.indexOf channel
+		if index !== -1
+			channels.splice index, 1
+		channels
+
+export async function logIn(clientId: string, token: string)
+	response := await fetch "https://api.twitch.tv/helix/users",
+		method: "GET"
+		headers:  Authorization: `Bearer ${token}`, "Client-ID": clientId
+		responseType: ResponseType.JSON
+
+	if !response.ok
+		console.error response
+		throw new ChattiesError(`Failed to log in, status code ${response.status}`)
+
+	json := response.data as data: { login: string }[]
+	if json.data.length === 0
+		throw new ChattiesError("Failed to log in, no user data")
+	login := json.data[0].login
+	await invoke "log_in", { login, token, clientId }
+	credentials.set { login, token, client_id: clientId };
+
+export async function logOut()
+	await invoke "log_out"
+	credentials.set undefined
+
+export async function sendMessage(channel: string, message: string)
+	await invoke "send_message", { channel, message }
+
+export channelIds := new Map<string, string>()
+
+{
+	lsJoinedChannels := localStorage.getItem "joinedChannels"
+	if lsJoinedChannels
+		for channel of JSON.parse(lsJoinedChannels) as string[]
+			await joinChannel channel
+}
+
+joinedChannels.subscribe (channels) =>
+	localStorage.setItem "joinedChannels", JSON.stringify channels
+
+export currentChannel := writable localStorage.getItem("currentChannel") || ""
+currentChannel.subscribe (channel) =>
+	localStorage.setItem "currentChannel", channel
+
+messages := new Map<string, Writable<Message[]>>()
+export function messageStore(channel: string)
+	store .= messages.get(channel)
+	if store
+		return store
+	connectToChannel channel
+	store = writable<Message[]>([])
+	messages.set channel, store
+	store
+
+channelIdPromises := new Map<string, Promise<void>>()
+
+export function setChannelId(channel: string, id: string)
+	channelIds.set channel, id
+	promise := plugins.channelId channel, id
+	channelIdPromises.set channel, promise
+	promise
+
+appWindow.listen<PrivMessage> "priv-msg", async (event) => {
+	message := event.payload
+	message.type = "privmsg"
+	message.timestamp = new Date message.server_timestamp_str
+	message.replacements = []
+	promise .= channelIdPromises.get message.channel.login
+	if promise == null
+		promise = setChannelId message.channel.login, message.channel.id
+	try
+		await promise
+	catch error_: unknown
+		error := error_ as { _thrown?: boolean }
+		if (!error._thrown) {
+			error._thrown = true
+			throw error
+		}
+
+	plugins.message message
+	messageStore(message.channel.login).update (msgs) =>
+		msgs.push message
+		msgs
+
+	lastSeenColors.update (colors) =>
+		colors.set message.sender.login, message.name_hex ?? randomHex()
+		colors
+}
+
+appWindow.listen<Names> "names", async (event) => {
+	console.log "Got names", event.payload
+}
+
+appWindow.listen<Join> "join", async (event) => {
+	message := event.payload
+	if (message.user.startsWith("justinfan")) message.user = get(credentials)?.login ?? "You"
+	messageStore(message.channel).update (msgs) => {
+		for (const previous of msgs.slice(-5).reverse())
+			if (previous.type === "join") {
+				// merge with previous join
+				previous.users.push message.user
+				return msgs
+			}
+		msgs.push
+			type: "join"
+			timestamp: new Date()
+			channel: message.channel
+			users: [message.user]
+
+		return msgs
+	}
+}
+
+appWindow.listen<Part> "part", async (event) => {
+	message := event.payload
+	if (message.user.startsWith("justinfan")) message.user = get(credentials)?.login ?? "You"
+	messageStore(message.channel).update (msgs) => {
+		for (const previous of msgs.slice(-5).reverse())
+			if (previous.type === "part") {
+				// merge with previous part
+				previous.users.push message.user
+				return msgs
+			}
+		msgs.push
+			type: "part"
+			timestamp: new Date()
+			channel: message.channel
+			users: [message.user]
+
+		return msgs
+	}
+}
+
+appWindow.listen<RoomState> "room_state", async (event) => {
+	message := event.payload
+	if (!channelIds.has(message.channel_login))
+		setChannelId message.channel_login, message.channel_id
+}

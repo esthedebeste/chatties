@@ -34,7 +34,10 @@ const config = {
 		"func-style": ["error", "declaration"],
 		"prefer-arrow-callback": ["error", { allowUnboundThis: true }],
 	},
-	ignorePatterns: ["*.d.ts"],
+	ignorePatterns: [
+		"*.d.ts",
+		"*.svelte", // eslint svelte doesn't support civet, tries to parse it as js, and fails
+	],
 }
 
 module.exports = config

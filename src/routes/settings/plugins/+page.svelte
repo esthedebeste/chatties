@@ -1,5 +1,5 @@
-<script lang="ts">
-	import { invoke } from "$lib/api"
+<script lang="civet">
+	{ invoke } from $lib/api/index.civet
 </script>
 
 <main>

@@ -1,6 +1,6 @@
-<script lang="ts">
-	import type { PartMessage } from "../types/message"
-	import SystemMessage from "./SystemMessage.svelte"
+<script lang="civet">
+	type { PartMessage } from ../types/message.civet
+	SystemMessage from ./SystemMessage.svelte
 
 	export let message: PartMessage
 </script>

@@ -1,38 +1,38 @@
-<script lang="ts" context="module">
-	import { writable } from "svelte/store"
+<script lang="civet" context="module">
+	{ writable } from svelte/store
 
-	export const tooltip = writable<
-		| {
-				name: string
-				extra: string
-				emote: HTMLElement
-		  }
-		| undefined
-	>(undefined)
+	export tooltip := writable<
+		undefined |
+			name: string
+			extra: string
+			emote: HTMLElement
+	> undefined
 </script>
 
-<script lang="ts">
+<script lang="civet">
 	let x: number
 	let top: string
 	let bottom: string
 	let element: HTMLDivElement
-	$: if ($tooltip && element) {
-		const { emote } = $tooltip
-		const emoteRect = emote.getBoundingClientRect()
-		const rect = element.getBoundingClientRect()
-		if (emoteRect.bottom + rect.height > innerHeight) {
+	$: if $tooltip && element
+		{ emote } := $tooltip
+		emoteRect := emote.getBoundingClientRect()
+		rect := element.getBoundingClientRect()
+		if emoteRect.bottom + rect.height > innerHeight
 			// above the emote
 			bottom = window.innerHeight - emoteRect.top + 5 + "px"
 			top = ""
-		} else {
+		else
 			// below the emote
 			top = emoteRect.bottom + 5 + "px"
 			bottom = ""
-		}
-		if (emoteRect.right + rect.width / 2 > innerWidth) x = innerWidth - rect.width / 2 - 15
-		else if (emoteRect.left - rect.width / 2 < 0) x = rect.width / 2
-		else x = emoteRect.left + emoteRect.width / 2
-	}
+
+		if emoteRect.right + rect.width / 2 > innerWidth
+			x = innerWidth - rect.width / 2 - 15
+		else if emoteRect.left - rect.width / 2 < 0
+			x = rect.width / 2
+		else
+			x = emoteRect.left + emoteRect.width / 2
 </script>
 
 {#if $tooltip}

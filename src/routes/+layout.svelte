@@ -1,6 +1,7 @@
-<script lang="ts">
-	import "../global.css"
-	import Login from "./Login.svelte"
+<script lang="civet">
+	import $lib/plugins/shared.civet
+	import ../global.css
+	Login from ./Login.svelte
 </script>
 
 <nav>

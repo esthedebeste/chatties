@@ -15,46 +15,54 @@ pub fn type_to_ts(ty: &Type) -> Option<String> {
             if path.path.segments.len() != 1 {
                 todot!();
             }
-            if first.ident == "Result" {
-                if let syn::PathArguments::AngleBracketed(args) = &first.arguments {
-                    if let Some(syn::GenericArgument::Type(ty)) = args.args.first() {
-                        type_to_ts(ty)?
-                    } else {
-                        todot!()
-                    }
-                } else {
-                    todot!();
-                }
-            } else if first.ident == "Option" {
-                if let syn::PathArguments::AngleBracketed(args) = &first.arguments {
-                    if let Some(syn::GenericArgument::Type(ty)) = args.args.first() {
-                        format!("{} | null", type_to_ts(ty)?)
+
+            let str = first.ident.to_string();
+            match str.as_str() {
+                "Result" => {
+                    if let syn::PathArguments::AngleBracketed(args) = &first.arguments {
+                        if let Some(syn::GenericArgument::Type(ty)) = args.args.first() {
+                            type_to_ts(ty)?
+                        } else {
+                            todot!()
+                        }
                     } else {
                         todot!();
                     }
-                } else {
-                    todot!();
                 }
-            } else if first.ident == "Vec" {
-                if let syn::PathArguments::AngleBracketed(args) = &first.arguments {
-                    if let Some(syn::GenericArgument::Type(ty)) = args.args.first() {
-                        format!("({})[]", type_to_ts(ty)?)
+                "Option" => {
+                    if let syn::PathArguments::AngleBracketed(args) = &first.arguments {
+                        if let Some(syn::GenericArgument::Type(ty)) = args.args.first() {
+                            format!("{} | null", type_to_ts(ty)?)
+                        } else {
+                            todot!();
+                        }
                     } else {
                         todot!();
                     }
-                } else {
-                    todot!();
                 }
-            } else if first.ident == "String" || first.ident == "str" {
-                "string".to_string()
-            } else if first.ident == "usize"
-            /* || more coming soon */
-            {
-                "number".to_string()
-            } else if first.ident == "AppHandle" || first.ident == "Window" {
-                return None;
-            } else {
-                first.ident.to_string()
+                "Vec" => {
+                    if let syn::PathArguments::AngleBracketed(args) = &first.arguments {
+                        if let Some(syn::GenericArgument::Type(ty)) = args.args.first() {
+                            format!("({})[]", type_to_ts(ty)?)
+                        } else {
+                            todot!();
+                        }
+                    } else {
+                        todot!();
+                    }
+                }
+                "String" | "str" => "string".to_string(),
+                "usize" | "u64" =>
+                /* || more coming soon */
+                {
+                    "number".to_string()
+                }
+
+                "AppHandle" | "Window" => {
+                    return None;
+                }
+                "bool" => "boolean".to_string(),
+                _ => str,
             }
         }
         Type::Reference(ty) => type_to_ts(&ty.elem)?,

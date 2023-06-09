@@ -1,12 +1,14 @@
-<script lang="ts">
-	import { page } from "$app/stores"
+<script lang="civet">
+	{ page } from $app/stores
+	{ pluginsWithSettings } from $lib/plugins.civet
 
 	$: currentPath = $page.url.pathname
+	const plugins = pluginsWithSettings().map .id
 </script>
 
 <main>
 	<nav>
-		{#each [["/settings/plugins", "Plugins"]] as [path, name]}
+		{#each [["/settings/plugins", "Plugins"], ...plugins.map( id => [`/settings/plugins/${id}`, `Plugin: ${id}`] )] as [path, name]}
 			<a href={path} aria-current={path === currentPath && "page"}>{name}</a>
 		{/each}
 		<div>nothing else yet :3</div>
@@ -32,7 +34,7 @@
 	a {
 		display: block;
 		color: #fff;
-		padding: 2ch;
+		padding: 2ch 0;
 		background-color: #181818;
 		text-align: center;
 		width: 100%;

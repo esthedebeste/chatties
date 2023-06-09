@@ -1,56 +1,51 @@
-<script lang="ts">
-	import { currentChannel, joinedChannels, leaveChannel } from "$lib/api"
-	import Username from "$lib/chat/Username.svelte"
+<script lang="civet">
+	{ currentChannel, joinedChannels, leaveChannel } from $lib/api/index.civet
+	Username from $lib/chat/Username.svelte
 
-	function keydown(event: KeyboardEvent) {
-		if (!event.ctrlKey) return
-		if (event.shiftKey) {
+	function keydown(event: KeyboardEvent)
+		return unless event.ctrlKey
+		if event.shiftKey
 			// move channels with ctrl+shift+left/right
-			if (event.ctrlKey && event.shiftKey && event.code === "ArrowLeft") {
-				joinedChannels.update(channels => {
-					const index = channels.indexOf($currentChannel)
-					if (index > 0) channels.splice(index - 1, 0, channels.splice(index, 1)[0])
-					else if (index === 0) {
-						const first = channels.shift()
-						if (first) channels.push(first)
-					}
-					return channels
-				})
-			} else if (event.ctrlKey && event.shiftKey && event.code === "ArrowRight") {
-				joinedChannels.update(channels => {
-					const index = channels.indexOf($currentChannel)
-					if (index < channels.length - 1)
-						channels.splice(index + 1, 0, channels.splice(index, 1)[0])
-					else if (index === channels.length - 1) {
-						const last = channels.pop()
-						if (last) channels.unshift(last)
-					}
-					return channels
-				})
-			}
-		} else {
+			if event.ctrlKey && event.shiftKey && event.code === "ArrowLeft"
+				joinedChannels.update (channels) =>
+					index := channels.indexOf $currentChannel
+					if index > 0
+						channels.splice index - 1, 0, channels.splice(index, 1)[0]
+					else if index === 0
+						first := channels.shift()
+						if first then channels.push first
+					channels
+
+			else if event.ctrlKey && event.shiftKey && event.code === "ArrowRight"
+				joinedChannels.update (channels) =>
+					index := channels.indexOf $currentChannel
+					if index < channels.length - 1
+						channels.splice index + 1, 0, channels.splice(index, 1)[0]
+					else if index === channels.length - 1
+						last := channels.pop()
+						if last then channels.unshift last
+					channels
+		else
 			// move between channels with ctrl+left/right
-			if (event.code === "ArrowLeft") {
-				const channels = $joinedChannels
-				const index = channels.indexOf($currentChannel)
-				$currentChannel = index > 0 ? channels[index - 1] : channels[channels.length - 1]
-			} else if (event.code === "ArrowRight") {
-				const channels = $joinedChannels
-				const index = channels.indexOf($currentChannel)
-				$currentChannel = index < channels.length - 1 ? channels[index + 1] : channels[0]
-			}
-		}
-	}
+			if (event.code === "ArrowLeft")
+				channels := $joinedChannels
+				index := channels.indexOf $currentChannel
+				$currentChannel = channels.at index - 1
+			else if (event.code === "ArrowRight")
+				channels := $joinedChannels
+				index := channels.indexOf $currentChannel
+				$currentChannel = if index < channels.length - 1 then channels[index + 1] else channels[0]
+
 
 	// evenly distribute channels across rows
 	let chTester: HTMLDivElement | undefined
-	$: chWidth = chTester ? Number.parseFloat(getComputedStyle(chTester).width) : 8
-	$: maxChannelLen = Math.max(...$joinedChannels.map(channel => channel.length)) + 5
+	$: chWidth = if chTester then Number getComputedStyle(chTester).width else 8
+	$: maxChannelLen = 5 + Math.max ...$joinedChannels.map .length
 	$: windowWidth = window.innerWidth
-	$: rows = Math.ceil(($joinedChannels.length * maxChannelLen * chWidth) / windowWidth)
+	$: rows = Math.ceil ($joinedChannels.length * maxChannelLen * chWidth) / windowWidth
 	let channelsPerRow: number
 	$: channelsPerRow = $joinedChannels.length / rows
-	$: channelsPerRow = channelsPerRow <= 1.618_033_988_75 ? 1 : Math.ceil(channelsPerRow)
+	$: channelsPerRow = if channelsPerRow <= 1.618_033_988_75 then 1 else Math.ceil channelsPerRow
 </script>
 
 <svelte:window on:keydown={keydown} on:resize={() => (windowWidth = window.innerWidth)} />

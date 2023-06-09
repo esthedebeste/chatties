@@ -1,11 +1,10 @@
-<script lang="ts">
-	import { joinChannel, joinedChannels } from "$lib/api"
+<script lang="civet">
+	{ joinChannel, joinedChannels } from $lib/api/index.civet
 
-	let channel = ""
-	async function submit() {
-		await joinChannel(channel)
+	channel .= ""
+	async function submit()
+		await joinChannel channel
 		channel = "" // clear the input
-	}
 </script>
 
 <form on:submit|preventDefault={submit}>

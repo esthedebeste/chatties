@@ -1,24 +1,24 @@
-<script lang="ts">
-	import { tooltip } from "$lib/EmoteTooltip.svelte"
+<script lang="civet">
+	{ tooltip } from $lib/EmoteTooltip.svelte
 
 	export let source: string
 	export let name: string
 	export let extra: string
-	export let height: string | undefined = undefined
-	export let width: string | undefined = undefined
-	export let verticalAlign: string | undefined = undefined
+	export height: string | undefined .= undefined
+	export width: string | undefined .= undefined
+	export verticalAlign: string | undefined .= undefined
 	let emote: HTMLImageElement
-	function hover() {
-		if (!emote) return
-		tooltip.set({
+	function hover()
+		return unless emote
+		tooltip.set {
 			name,
 			extra,
 			emote,
-		})
-	}
-	function unhover() {
-		tooltip.set(undefined)
-	}
+		}
+
+	function unhover()
+		tooltip.set undefined
+
 </script>
 
 <img

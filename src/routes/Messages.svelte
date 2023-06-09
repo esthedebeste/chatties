@@ -1,40 +1,45 @@
-<script lang="ts">
-	import { channelIds, currentChannel, messageStore, setChannelId } from "$lib/api"
-	import JoinMessage from "$lib/chat/JoinMessage.svelte"
-	import PartMessage from "$lib/chat/PartMessage.svelte"
-	import PrivMessage from "$lib/chat/PrivMessage.svelte"
-	import { onMount } from "svelte"
+<script lang="civet">
+	{ channelIds, currentChannel, messageStore, setChannelId } from $lib/api/index.civet
+	JoinMessage from $lib/chat/JoinMessage.svelte
+	PartMessage from $lib/chat/PartMessage.svelte
+	PrivMessage from $lib/chat/PrivMessage.svelte
+	{ getSetting } from $lib/plugins.civet
+	{ onMount } from svelte
+	{ plugin as twitchNativePlugin } from $lib/plugins/twitch-native.civet
 	let messageElement: HTMLUListElement
 
-	function scrollDown(force = false) {
-		if (!messageElement) return
-		const atBottom =
-			messageElement.scrollTop + messageElement.clientHeight >= messageElement.scrollHeight - 30 // 30px buffer
-		if (force || atBottom) setTimeout(() => messageElement.scroll(0, messageElement.scrollHeight)) // scroll to bottom again to account for the new message
-	}
+	function scrollDown(force = false)
+		return unless messageElement
+		atBottom := messageElement.scrollTop + messageElement.clientHeight >= messageElement.scrollHeight - 30 // 30px buffer
+		if force || atBottom
+			setTimeout => messageElement.scroll 0, messageElement.scrollHeight // scroll to bottom again to account for the new message
 
 	$: currentChannelLogin = $currentChannel.toLowerCase()
-	$: messages = messageStore(currentChannelLogin)
+	$: messages = messageStore currentChannelLogin
 	$: {
-		$messages
+		$messages;
 		$currentChannel
 		scrollDown()
 	}
-	onMount(() => scrollDown(true))
+	onMount => scrollDown true
 
-	function reload(event: KeyboardEvent) {
-		if (event.key === "F5" || (event.ctrlKey && event.key === "r")) {
-			event.preventDefault()
+	function reload(event: KeyboardEvent)
+		return unless event.key === "F5" || (event.ctrlKey && event.key === "r")
+		event.preventDefault()
 
-			console.log("Reloading channel", $currentChannel)
-			const channelId = channelIds.get($currentChannel)
-			channelIds.delete($currentChannel)
-			if (channelId) setChannelId($currentChannel, channelId)
-		}
-	}
+		console.log "Reloading channel", $currentChannel
+		channelId := channelIds.get $currentChannel
+		channelIds.delete $currentChannel
+		if channelId
+			setChannelId $currentChannel, channelId
+
 	$: displayMessages = $messages
 		.slice(-150)
 		.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+	$: unless getSetting twitchNativePlugin, "show-left-joined"
+		displayMessages = displayMessages.filter(
+			(message) => message.type !== "part" && message.type !== "join"
+		)
 </script>
 
 <svelte:window on:keydown={reload} />

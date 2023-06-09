@@ -1,0 +1,117 @@
+{ fetch } from @tauri-apps/api/http
+type { Plugin } from ./plugin-api.civet
+{ wordAutocomplete } from ./shared.civet
+{ credentials } from ../api/credentials.civet
+
+interface BadgeInfo
+	id: string
+	image_url_1x: string
+	image_url_2x: string
+	image_url_4x: string
+	title: string
+	description: string
+	click_action: string
+	click_url?: string
+
+type BadgeSets = {
+	set_id: string
+	versions: BadgeInfo[]
+}[]
+
+badgeSets := new Map<string, BadgeInfo>()
+customBadges := new Map<string, Map<string, BadgeInfo>>()
+chatters := new Map<string, Set<string>>()
+export plugin: Plugin := {
+	id: "twitch-native"
+	init()
+		new Promise (resolve, reject) =>
+			unsubscribe := credentials.subscribe (credentials) =>
+				try
+					if credentials == null
+						return
+					response := await fetch "https://api.twitch.tv/helix/chat/badges/global",
+						method: "GET"
+						headers:
+							Authorization: `Bearer ${credentials.token}`
+							"Client-Id": credentials.client_id
+					if !response.ok
+						reject new Error("Failed to fetch global badges")
+					{ data } := response.data as { data: BadgeSets }
+					for set of data
+						for version of set.versions
+							badgeSets.set `${set.set_id}/${version.id}`, version
+					console.log "Loaded global badges", data
+					resolve()
+					unsubscribe();
+				catch e
+					reject e
+
+	channelId(channel, id)
+		new Promise (resolve, reject) =>
+			unsubscribe := credentials.subscribe (credentials) =>
+				try
+					if credentials == null
+						return
+					response := await fetch `https://api.twitch.tv/helix/chat/badges?broadcaster_id=${id}`,
+						method: "GET"
+						headers:
+							Authorization: `Bearer ${credentials.token}`
+							"Client-Id": credentials.client_id
+					if !response.ok
+						reject new Error("Failed to fetch channel badges")
+					{ data } := response.data as { data: BadgeSets }
+					map := new Map<string, BadgeInfo>()
+					for set of data
+						for version of set.versions
+							map.set `${set.set_id}/${version.id}`, version
+					customBadges.set id, map
+					chatters.set id, new Set [channel]
+					console.log "Loaded custom badges for channel", channel, id, data
+					unsubscribe()
+					resolve()
+				catch e
+					reject e
+
+	message(message)
+		chatters.get(message.channel.id)?.add message.sender.name
+		for emote of message.emotes
+			message.replacements.push
+				type: "emote"
+				char_range: emote.char_range
+				code: emote.code
+				info: "Twitch Emote"
+				url: `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/dark/3.0`
+
+		for badge of message.badges
+			custom := customBadges.get message.channel.id
+			if badge.version === undefined
+				continue
+			key := `${badge.name}/${badge.version}`
+			if info := custom?.get?(key)
+				badge.title = info.title
+				badge.url = info.image_url_4x
+				badge.info = "Custom Twitch Badge"
+				if info.title !== info.description
+					badge.info += `\n${info.description}`
+			else do if info := badgeSets.get key
+					badge.title = info.title
+					badge.url = info.image_url_4x
+					badge.info = "Twitch Badge"
+					if info.title !== info.description
+						badge.info += `\n${info.description}`
+			else
+				badge.title = badge.name
+				badge.url = "/unknown-badge.png"
+				badge.info = "Version " + badge.version + "\nUnknown Twitch Badge"
+
+
+	autocomplete({ word, channelId })
+		return [] unless word.startsWith("@")
+		wordAutocomplete word, [...(chatters.get(channelId) ?? [])].map (n) => "@" + n
+
+	settings:
+		"show-left-joined":
+			name: "Show left/joined messages"
+			type: "boolean"
+			default: true
+}

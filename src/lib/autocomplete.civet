@@ -1,0 +1,17 @@
+{ get } from svelte/store
+{ channelIds, currentChannel } from ./api/index.civet
+* as plugins from ./plugins.civet
+
+export interface AutocompleteRequest
+	// The word that is being autocompleted
+	word: string
+	// The channel that the word is being autocompleted in
+	channel: string
+	channelId: string
+
+export function autocomplete(word: string): string[]
+	channel := get currentChannel
+	channelId := channelIds.get channel
+	if !channelId
+		return []
+	plugins.autocomplete { word, channel, channelId }

@@ -1,0 +1,4 @@
+export class ChattiesError < Error
+	constructor(message: string)
+		super message
+		@name = "ChattiesError"

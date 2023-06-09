@@ -12,6 +12,15 @@ export declare interface Part {
 	channel: string
 	user: string
 }
+export declare interface RoomState {
+	channel_login: string
+	channel_id: string
+	emote_only: boolean
+	followers_only: number | null
+	r9k: boolean
+	slow_mode: number | null
+	subscribers_only: boolean
+}
 export declare interface Names {
 	channel: string
 	names: (string)[]
@@ -44,7 +53,7 @@ export declare interface PrivMsg {
 	message_text: string
 	sender: TwitchUserBasics
 	badges: (Badge)[]
-	bits: u64 | null
+	bits: number | null
 	name_hex: HexColor | null
 	emotes: (Emote)[]
 	message_id: string

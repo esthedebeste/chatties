@@ -1,5 +1,5 @@
-<script lang="ts">
-	import Emote from "./Emote.svelte"
+<script lang="civet">
+	Emote from ./Emote.svelte
 
 	export let source: string
 	export let name: string

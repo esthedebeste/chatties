@@ -1,5 +1,5 @@
-<script lang="ts">
-	import Time from "./Time.svelte"
+<script lang="civet">
+	Time from ./Time.svelte
 
 	export let date: Date
 </script>

@@ -16,6 +16,17 @@ pub struct Part<'a> {
 }
 
 #[command_struct]
+pub struct RoomState<'a> {
+    pub channel_login: &'a str,
+    pub channel_id: &'a str,
+    pub emote_only: bool,
+    pub followers_only: Option<u64>,
+    pub r9k: bool,
+    pub slow_mode: Option<u64>,
+    pub subscribers_only: bool,
+}
+
+#[command_struct]
 pub struct Names<'a> {
     pub channel: &'a str,
     pub names: Vec<&'a str>,

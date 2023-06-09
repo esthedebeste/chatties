@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="civet">
 	export let date: Date
 </script>
 

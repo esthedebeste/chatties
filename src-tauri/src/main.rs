@@ -11,7 +11,7 @@ mod utils;
 
 use anyhow::Result;
 use credentials::Credentials;
-use irc_types::{Names, PrivMsg, TwitchChannelBasics};
+use irc_types::{Names, PrivMsg, RoomState, TwitchChannelBasics};
 use macros::{colon_3_init, command};
 use message_history::get_recent_messages;
 use std::fs::create_dir_all;
@@ -20,7 +20,7 @@ use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Manager, Window};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::{select, try_join};
-use twitch_irc::message::{IRCMessage, IRCTags, ServerMessage};
+use twitch_irc::message::{FollowersOnlyMode, IRCMessage, IRCTags, ServerMessage};
 use twitch_irc::TwitchIRCClient as GTwitchIRCClient;
 use twitch_irc::{ClientConfig, SecureTCPTransport};
 use utils::get_data_dir;
@@ -124,21 +124,23 @@ async fn send_message(
 fn emit_irc(window: &Window, message: ServerMessage) -> Result<()> {
     match message {
         ServerMessage::Privmsg(msg) => {
-            let privmsg = PrivMsg {
-                channel: TwitchChannelBasics {
-                    id: &msg.channel_id,
-                    login: &msg.channel_login,
+            window.emit(
+                "priv-msg",
+                PrivMsg {
+                    channel: TwitchChannelBasics {
+                        id: &msg.channel_id,
+                        login: &msg.channel_login,
+                    },
+                    message_text: &msg.message_text,
+                    sender: (&msg.sender).into(),
+                    badges: msg.badges.iter().map(|badge| badge.into()).collect(),
+                    bits: msg.bits,
+                    name_hex: msg.name_color.map(|color| color.into()),
+                    emotes: msg.emotes.iter().map(|emote| emote.into()).collect(),
+                    message_id: &msg.message_id,
+                    server_timestamp_str: &msg.server_timestamp.to_rfc3339(),
                 },
-                message_text: &msg.message_text,
-                sender: (&msg.sender).into(),
-                badges: msg.badges.iter().map(|badge| badge.into()).collect(),
-                bits: msg.bits,
-                name_hex: msg.name_color.map(|color| color.into()),
-                emotes: msg.emotes.iter().map(|emote| emote.into()).collect(),
-                message_id: &msg.message_id,
-                server_timestamp_str: &msg.server_timestamp.to_rfc3339(),
-            };
-            window.emit("priv-msg", privmsg)?;
+            )?;
         }
         ServerMessage::Join(msg) => {
             window.emit(
@@ -155,6 +157,27 @@ fn emit_irc(window: &Window, message: ServerMessage) -> Result<()> {
                 Part {
                     channel: msg.channel_login.trim_start_matches('#'),
                     user: &msg.user_login,
+                },
+            )?;
+        }
+        ServerMessage::RoomState(msg) => {
+            window.emit(
+                "room_state",
+                RoomState {
+                    channel_login: &msg.channel_login,
+                    channel_id: &msg.channel_id,
+                    emote_only: msg.emote_only.unwrap_or(false),
+                    followers_only: if let Some(followers_only) = msg.follwers_only {
+                        match followers_only {
+                            FollowersOnlyMode::Disabled => None,
+                            FollowersOnlyMode::Enabled(duration) => Some(duration.as_secs()),
+                        }
+                    } else {
+                        None
+                    },
+                    r9k: msg.r9k.unwrap_or(false),
+                    slow_mode: msg.slow_mode.map(|duration| duration.as_secs()),
+                    subscribers_only: msg.subscribers_only.unwrap_or(false),
                 },
             )?;
         }

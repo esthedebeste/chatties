@@ -1,6 +1,6 @@
-<script lang="ts">
-	import type { JoinMessage } from "../types/message"
-	import SystemMessage from "./SystemMessage.svelte"
+<script lang="civet">
+	type { JoinMessage } from ../types/message.civet
+	SystemMessage from ./SystemMessage.svelte
 
 	export let message: JoinMessage
 </script>
