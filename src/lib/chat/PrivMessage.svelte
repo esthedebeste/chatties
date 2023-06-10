@@ -13,7 +13,7 @@
 <Username color={message.name_hex} login={message.sender.login} name={message.sender.name}>
 	<svelte:fragment slot="prefix">
 		<span>
-			{#each message.badges as badge}
+			{#each message.badges as badge (badge)}
 				<Badge source={badge.url} name={badge.title} extra={badge.info} />
 				{" "}
 			{/each}

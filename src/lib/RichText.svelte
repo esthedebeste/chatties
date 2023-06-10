@@ -5,7 +5,7 @@
 	export let parts: RichTextPart[]
 </script>
 
-{#each parts as part}{#if typeof part === "string"}{part}{:else if part.type === "emote"}<Emote
+{#each parts as part (part)}{#if typeof part === "string"}{part}{:else if part.type === "emote"}<Emote
 			source={part.url}
 			name={part.code}
 			extra={part.info}

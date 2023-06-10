@@ -8,7 +8,7 @@
 
 <main>
 	<nav>
-		{#each [["/settings/plugins", "Plugins"], ...plugins.map( id => [`/settings/plugins/${id}`, `Plugin: ${id}`] )] as [path, name]}
+		{#each [["/settings/plugins", "Plugins"], ...plugins.map( id => [`/settings/plugins/${id}`, `Plugin: ${id}`] )] as [path, name] (path)}
 			<a href={path} aria-current={path === currentPath && "page"}>{name}</a>
 		{/each}
 		<div>nothing else yet :3</div>

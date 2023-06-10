@@ -1,5 +1,6 @@
 <script lang="civet">
 	{ channelIds, currentChannel, messageStore, setChannelId } from $lib/api/index.civet
+	type { Message } from $types/message
 	JoinMessage from $lib/chat/JoinMessage.svelte
 	PartMessage from $lib/chat/PartMessage.svelte
 	PrivMessage from $lib/chat/PrivMessage.svelte
@@ -40,12 +41,18 @@
 		displayMessages = displayMessages.filter(
 			(message) => message.type !== "part" && message.type !== "join"
 		)
+
+	function key(message: Message)
+		if message.type === "privmsg"
+			message.message_id
+		else
+			message.timestamp.getTime()
 </script>
 
 <svelte:window on:keydown={reload} />
 
 <ul bind:this={messageElement}>
-	{#each displayMessages as msg}
+	{#each displayMessages as msg (key(msg))}
 		<li>
 			{#if msg.type === "privmsg"}
 				<PrivMessage message={msg} />
