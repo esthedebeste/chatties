@@ -1,6 +1,6 @@
 [package]
 name = "chatties"
-version = "0.4.0"
+version = "0.4.1"
 description = "twitch chat client :3"
 authors = ["esthedebeste"]
 license = "MIT"

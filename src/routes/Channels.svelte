@@ -39,10 +39,10 @@
 
 	// evenly distribute channels across rows
 	let chTester: HTMLDivElement | undefined
-	$: chWidth = if chTester then Number getComputedStyle(chTester).width else 8
+	$: chWidth = if chTester then Number.parseFloat getComputedStyle(chTester).width else 8
 	$: maxChannelLen = 5 + Math.max ...$joinedChannels.map .length
 	$: windowWidth = window.innerWidth
-	$: rows = Math.ceil ($joinedChannels.length * maxChannelLen * chWidth) / windowWidth
+	$: rows = Math.ceil(($joinedChannels.length * maxChannelLen * chWidth) / windowWidth)
 	let channelsPerRow: number
 	$: channelsPerRow = $joinedChannels.length / rows
 	$: channelsPerRow = if channelsPerRow <= 1.618_033_988_75 then 1 else Math.ceil channelsPerRow
