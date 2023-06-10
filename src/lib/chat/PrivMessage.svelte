@@ -1,6 +1,6 @@
 <script lang="civet">
 	{ extendMessage } from $lib/utils.civet
-	type { PrivMessage } from ../types/message.civet
+	type { PrivMessage } from $types/message
 	Badge from ./Badge.svelte
 	Time from ./Time.svelte
 	Username from ./Username.svelte

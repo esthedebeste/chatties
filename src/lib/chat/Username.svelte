@@ -4,7 +4,7 @@
 	{ writable, get } from svelte/store
 	{ randomHex } from ../utils.civet
 	RichText from ../RichText.svelte
-	type { Part } from ../types/text.civet
+	type { Part } from $types/text
 
 	export let login: string
 	export name .= login

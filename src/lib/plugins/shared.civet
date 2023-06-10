@@ -1,4 +1,7 @@
-type { Emote, PrivMessage } from ../types/message
+type { PrivMessage } from $types/message
+type { Emote } from $types/text
+type { ChattiesPluginUtils } from $types/plugin-api
+export type { ChattiesPluginUtils }
 
 function escapeRegex(string: string)
 	string.replaceAll /[$()*+.?[\\\]^{|}]/g, "\\$&"
@@ -28,15 +31,6 @@ export function regexEmotes(
 
 export function wordAutocomplete(word: string, words: string[])
 	words.filter (w) => w.toLowerCase().startsWith word.toLowerCase()
-
-type brType = typeof buildRegex
-type reType = typeof regexEmotes
-type waType = typeof wordAutocomplete
-export type ChattiesPluginUtils = Readonly<
-	buildRegex: brType
-	regexEmotes: reType
-	wordAutocomplete: waType
->
 
 export pluginUtils: ChattiesPluginUtils := { buildRegex, regexEmotes, wordAutocomplete }
 

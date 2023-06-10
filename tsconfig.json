@@ -8,6 +8,11 @@
 		"sourceMap": true,
 		"strict": true,
 		"allowArbitraryExtensions": true,
-		"jsx": "preserve"
+		"jsx": "preserve",
+		"paths": {
+			"$types/*": ["./types/*"],
+			"$lib": ["./src/lib"],
+			"$lib/*": ["./src/lib/*"]
+		}
 	}
 }

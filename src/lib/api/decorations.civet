@@ -1,10 +1,10 @@
-type { Part as TextPart } from ../types/text.civet
+type { RichTextPart } from $types/text
 type { HexColor } from ./index.civet
 { writable, type Writable } from svelte/store
 
-export decorations := new Map<string, Writable<TextPart[]>>
+export decorations := new Map<string, Writable<RichTextPart[]>>
 
-export function addDecoration(channel: string, ...decoration: TextPart[]): void
+export function addDecoration(channel: string, ...decoration: RichTextPart[]): void
 	store := decorations.get channel
 	if store
 		store.update (decorations) =>

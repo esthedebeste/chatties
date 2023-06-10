@@ -12,7 +12,7 @@ type { AutocompleteRequest } from ./autocomplete.civet
 { plugin as ffzPlugin } from ./plugins/ffz.civet
 { pluginUtils } from ./plugins/shared.civet
 { plugin as twitchNativePlugin } from ./plugins/twitch-native.civet
-type { PrivMessage } from ./types/message.civet
+type { PrivMessage } from $types/message
 { allSettledWithThrow } from ./utils.civet
 plugins: Plugin[] := []
 

@@ -1,14 +1,14 @@
-export interface Emote
+export interface Emote {
 	type: "emote"
 	/** @example "LUL" */
 	code: string
 	/** @example "Twitch Subscriber Emote" */
 	info: string
 	url: string
-
-export interface StyledText
+}
+export interface StyledText {
 	type: "styled-text"
 	text: string
 	css: string
-
-export type Part = Emote | StyledText | string
+}
+export type RichTextPart = Emote | StyledText | string

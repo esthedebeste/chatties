@@ -1,8 +1,8 @@
 <script lang="civet">
-	type { Part } from ../types/text.civet
+	type { RichTextPart } from $types/text
 	Emote from ./chat/Emote.svelte
 
-	export let parts: Part[]
+	export let parts: RichTextPart[]
 </script>
 
 {#each parts as part}{#if typeof part === "string"}{part}{:else if part.type === "emote"}<Emote

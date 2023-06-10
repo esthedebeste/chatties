@@ -1,76 +1,9 @@
 * as zod from zod
-type { AutocompleteRequest } from ../autocomplete.civet
-type { PrivMessage } from ../types/message.civet
-type { Part as TextPart } from ../types/text.civet
-type { ChattiesPluginUtils } from ./shared.civet
+type { PluginContext, Plugin, Setting, Settings } from $types/plugin-api
 
-export type Nodes = ChildNode[]
-export interface Badges
-	pre: ChildNode[]
-	post: ChildNode[]
+export type { PluginContext, Plugin, Setting, Settings }
 
-export interface PluginContext
-	setting<T>(name: string): T
-	user:
-		login(): string | undefined // lowercase username, or undefined if not logged in
-
-	visual:
-		user:
-			addDecoration(username: string, ...part: TextPart[]): void
-
-	utils: ChattiesPluginUtils
-
-export interface Plugin
-	id: string
-	// Called when the plugin is loaded
-	init?: (context: PluginContext) => void | Promise<void>
-	// Called when the plugin is unloaded
-	destroy?: () => void | Promise<void>
-	/**
-	  * Called when a channel is joined
-	  *
-	  * NOTE: does not mean we are connected to it yet, just means that the user has added it to their channels list.
-	  * Use `channelId(channel, id) {}` for a "connected" event.
-	  */
-	join?: (channel: string) => void | Promise<void>
-	// Called when we find out the id of a channel (right after connecting)
-	channelId?: (channel: string, id: string) => void | Promise<void>
-	// Called when a channel is left
-	leave?: (channel: string) => void
-	// Add info to a message (badges, emotes). The `message` parameter is mutable.
-	message?: (message: PrivMessage) => void
-	// Autocomplete provider. Returns a list of suggestions for the given word.
-	autocomplete?: (input: AutocompleteRequest) => string[]
-	// !Don't forget to add new hooks to the pluginVerifier!
-
-	// Settings for this plugin
-	settings?: Settings
-
-
-type SettingType = "string" | "number" | "boolean"
-type SettingTypeToType<T extends SettingType> = T extends "string"
-	? string
-	: T extends "number"
-	? number
-	: T extends "boolean"
-	? boolean
-	: never
-
-interface _SBody<S extends SettingType>
-	type: S
-	/** Automatic setting storage, `context.setting("do-things")` to get the current value */
-	default: SettingTypeToType<S>
-	/**
-	 * Called when the setting is changed.
-	 */
-	changed?: (value: SettingTypeToType<S>) => void
-
-export type Setting = {
-	name: string
-} & (_SBody<"string"> | _SBody<"number"> | _SBody<"boolean">)
-export type Settings = Record<string, Setting>
-
-function _SBody<S extends SettingType>(type: S)
+function _SBody<S extends Setting["type"]>(type: S)
 	zod.object
 		type: zod.literal(type)
 		default: zod[type]()
@@ -82,6 +15,7 @@ export settingsVerifier := zod.record(
 		.object(name: zod.string())
 		.and(_SBody("string").or(_SBody("number")).or(_SBody("boolean")))
 )
+
 export pluginVerifier := zod
 	.object(
 		id: zod.string().regex(/^[a-z-]+$/)

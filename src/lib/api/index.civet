@@ -1,6 +1,6 @@
 import $lib/plugins.civet // always import plugins before using api
 * as plugins from ../plugins.civet
-type { Message, PrivMessage } from ../types/message.civet
+type { Message, PrivMessage } from $types/message
 { ResponseType, fetch } from @tauri-apps/api/http
 { appWindow } from @tauri-apps/api/window
 { get, writable, type Writable } from svelte/store
