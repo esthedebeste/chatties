@@ -14,6 +14,7 @@ type { AutocompleteRequest } from ./autocomplete.civet
 { plugin as twitchNativePlugin } from ./plugins/twitch-native.civet
 type { PrivMessage } from $types/message
 { allSettledWithThrow } from ./utils.civet
+{ currentChannel } from ./api/index.civet
 plugins: Plugin[] := []
 
 function addPlugin(plugin: Plugin): void
@@ -66,6 +67,7 @@ await allSettledWithThrow plugins.map async (plugin) =>
 				login: () => store.get(credentials)?.login
 
 			visual:
+				currentChannel: => store.get(currentChannel),
 				user: {
 					addDecoration
 				}

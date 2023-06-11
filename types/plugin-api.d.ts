@@ -31,9 +31,16 @@ export interface Plugin {
 export interface PluginContext {
 	setting<T>(name: string): T
 	user: {
-		login(): string | undefined // lowercase username, or undefined if not logged in
+		/**
+		 * @returns The username of the currently logged in user, or `undefined` if not logged in
+		 */
+		login(): string | undefined
 	}
 	visual: {
+		/**
+		 * @returns The channel that the user is currently looking at, or `undefined` if not looking at any channels.
+		 */
+		currentChannel(): string | undefined
 		user: {
 			addDecoration(username: string, ...part: RichTextPart[]): void
 		}
