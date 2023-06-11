@@ -31,6 +31,12 @@
 				"all": false,
 				"asset": true,
 				"assetScope": ["$APPDATA/plugins/*"]
+			},
+			"process": {
+				"all": false,
+				"exit": false,
+				"relaunch": true,
+				"relaunchDangerousAllowSymlinkMacos": false
 			}
 		},
 		"bundle": {

@@ -3,17 +3,48 @@ type { PluginContext, Plugin, Setting, Settings } from $types/plugin-api
 
 export type { PluginContext, Plugin, Setting, Settings }
 
-function _SBody<S extends Setting["type"]>(type: S)
-	zod.object
-		type: zod.literal(type)
-		default: zod[type]()
-		changed: zod.function().args(zod[type]()).optional()
+string :=
+	type: "string"
+	verifier: zod.string()
+number :=
+	type: "number"
+	verifier: zod.number()
+boolean :=
+	type: "boolean"
+	verifier: zod.boolean()
+stringEnum :=
+	type: "string-enum"
+	verifier: zod.string()
+	options: zod.string().array()
+array :=
+	type: "array"
+	verifier: zod.array(string.verifier.or number.verifier or boolean.verifier or stringEnum.verifier)
+
+settingValue := zod.union<any>(
+	([
+		string
+		number
+		boolean
+		stringEnum
+		array
+	] as const).map (setting) =>
+		acc: Record<string, zod.ZodType> :=
+			type: zod.literal(setting.type)
+			default: setting.verifier
+			changed: zod.function().args(setting.verifier).optional()
+
+		for key in setting
+			if key not in acc and key is not "verifier"
+				k := key as Exclude<keyof typeof setting, "type">
+				acc[k] = setting[k]
+		zod.object acc
+)
 
 export settingsVerifier := zod.record(
 	zod.string().regex(/^[a-z-]+$/), // kebab-case
 	zod
 		.object(name: zod.string())
-		.and(_SBody("string").or(_SBody("number")).or(_SBody("boolean")))
+		.and(settingValue)
 )
 
 export pluginVerifier := zod

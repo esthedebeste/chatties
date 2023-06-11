@@ -28,6 +28,7 @@ export plugin: Plugin := {
 			unsubscribe := credentials.subscribe (credentials) =>
 				try
 					if credentials == null
+						resolve() // not an error, but don't unsubscribe. when the user logs in, we want to immediately load the badges.
 						return
 					response := await fetch "https://api.twitch.tv/helix/chat/badges/global",
 						method: "GET"
@@ -51,6 +52,7 @@ export plugin: Plugin := {
 			unsubscribe := credentials.subscribe (credentials) =>
 				try
 					if credentials == null
+						resolve() // not an error, but don't unsubscribe. when the user logs in, we want to immediately load the badges.
 						return
 					response := await fetch `https://api.twitch.tv/helix/chat/badges?broadcaster_id=${id}`,
 						method: "GET"

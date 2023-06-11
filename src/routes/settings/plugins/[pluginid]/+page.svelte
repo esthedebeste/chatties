@@ -11,7 +11,7 @@
 	{#each settings as [id, setting] (`${plugin.id}.${id}`)}
 		<!-- svelte-ignore a11y-label-has-associated-control - the control is in Setting -->
 		<label>
-			{setting.name}
+			<div>{setting.name}</div>
 			<Setting {plugin} {id} {setting} />
 		</label>
 	{/each}

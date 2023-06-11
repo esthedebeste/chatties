@@ -13,7 +13,7 @@
 		return unless messageElement
 		atBottom := messageElement.scrollTop + messageElement.clientHeight >= messageElement.scrollHeight - 30 // 30px buffer
 		if force || atBottom
-			setTimeout => messageElement.scroll 0, messageElement.scrollHeight // scroll to bottom again to account for the new message
+			setTimeout => messageElement?.scroll 0, messageElement.scrollHeight // scroll to bottom again to account for the new message
 
 	$: currentChannelLogin = $currentChannel.toLowerCase()
 	$: messages = messageStore currentChannelLogin
@@ -37,22 +37,17 @@
 	$: displayMessages = $messages
 		.slice(-150)
 		.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+
 	$: unless getSetting twitchNativePlugin, "show-left-joined"
 		displayMessages = displayMessages.filter(
 			(message) => message.type !== "part" && message.type !== "join"
 		)
-
-	function key(message: Message)
-		if message.type === "privmsg"
-			message.message_id
-		else
-			message.timestamp.getTime()
 </script>
 
 <svelte:window on:keydown={reload} />
 
 <ul bind:this={messageElement}>
-	{#each displayMessages as msg (key(msg))}
+	{#each displayMessages as msg (msg.message_id)}
 		<li>
 			{#if msg.type === "privmsg"}
 				<PrivMessage message={msg} />

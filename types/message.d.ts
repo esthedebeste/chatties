@@ -27,11 +27,13 @@ export interface JoinMessage {
 	channel: string
 	users: string[]
 	timestamp: Date
+	message_id: string
 }
 export interface PartMessage {
 	type: "part"
 	channel: string
 	users: string[]
 	timestamp: Date
+	message_id: string
 }
 export type Message = PrivMessage | JoinMessage | PartMessage

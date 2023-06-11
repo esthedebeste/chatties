@@ -1,5 +1,6 @@
 <script lang="civet">
 	{ invoke } from $lib/api/index.civet
+	{ relaunch } from @tauri-apps/api/process
 </script>
 
 <main>
@@ -7,6 +8,8 @@
 	<p>
 		To add plugins, put their JS files into the plugin folder.
 		<button on:click={() => invoke("open_plugin_dir")}>Open plugin folder</button>
+		After adding plugins, it is recommended to
+		<button on:click={() => relaunch()}>restart chatties</button>
 	</p>
 </main>
 

@@ -46,7 +46,9 @@ export async function leaveChannel(channel: string)
 export async function logIn(clientId: string, token: string)
 	response := await fetch "https://api.twitch.tv/helix/users",
 		method: "GET"
-		headers:  Authorization: `Bearer ${token}`, "Client-ID": clientId
+		headers:
+			Authorization: `Bearer ${token}`
+			"Client-ID": clientId
 		responseType: ResponseType.JSON
 
 	if !response.ok
@@ -101,7 +103,7 @@ export function setChannelId(channel: string, id: string)
 	channelIdPromises.set channel, promise
 	promise
 
-appWindow.listen<PrivMessage> "priv-msg", async (event) => {
+appWindow.listen<PrivMessage> "priv-msg", async (event) =>
 	message := event.payload
 	message.type = "privmsg"
 	message.timestamp = new Date message.server_timestamp_str
@@ -112,7 +114,7 @@ appWindow.listen<PrivMessage> "priv-msg", async (event) => {
 	try
 		await promise
 	catch error_: unknown
-		error := error_ as { _thrown?: boolean }
+		error := error_ as _thrown?: boolean
 		if (!error._thrown) {
 			error._thrown = true
 			throw error
@@ -126,54 +128,52 @@ appWindow.listen<PrivMessage> "priv-msg", async (event) => {
 	lastSeenColors.update (colors) =>
 		colors.set message.sender.login, message.name_hex ?? randomHex()
 		colors
-}
 
-appWindow.listen<Names> "names", async (event) => {
+appWindow.listen<Names> "names", async (event) =>
 	console.log "Got names", event.payload
-}
 
-appWindow.listen<Join> "join", async (event) => {
+appWindow.listen<Join> "join", async (event) =>
 	message := event.payload
-	if (message.user.startsWith("justinfan")) message.user = get(credentials)?.login ?? "You"
-	messageStore(message.channel).update (msgs) => {
-		for (const previous of msgs.slice(-5).reverse())
-			if (previous.type === "join") {
+	if message.user.startsWith "justinfan"
+		message.user = get(credentials)?.login ?? "You"
+	messageStore(message.channel).update (msgs) =>
+		for previous of msgs.slice(-5).reverse()
+			if previous.type === "join"
 				// merge with previous join
 				previous.users.push message.user
 				return msgs
-			}
+
 		msgs.push
 			type: "join"
 			timestamp: new Date()
+			message_id: crypto.randomUUID()
 			channel: message.channel
 			users: [message.user]
 
-		return msgs
-	}
-}
+		msgs
 
-appWindow.listen<Part> "part", async (event) => {
+appWindow.listen<Part> "part", async (event) =>
 	message := event.payload
-	if (message.user.startsWith("justinfan")) message.user = get(credentials)?.login ?? "You"
-	messageStore(message.channel).update (msgs) => {
-		for (const previous of msgs.slice(-5).reverse())
-			if (previous.type === "part") {
+	if message.user.startsWith "justinfan"
+		message.user = get(credentials)?.login ?? "You"
+	messageStore(message.channel).update (msgs) =>
+		for previous of msgs.slice(-5).reverse()
+			if previous.type === "part"
 				// merge with previous part
 				previous.users.push message.user
 				return msgs
-			}
+
 		msgs.push
 			type: "part"
 			timestamp: new Date()
+			message_id: crypto.randomUUID()
 			channel: message.channel
 			users: [message.user]
 
-		return msgs
-	}
-}
+		msgs
 
-appWindow.listen<RoomState> "room_state", async (event) => {
+appWindow.listen<RoomState> "room_state", async (event) =>
 	message := event.payload
-	if (!channelIds.has(message.channel_login))
+	if !channelIds.has message.channel_login
 		setChannelId message.channel_login, message.channel_id
-}
+
